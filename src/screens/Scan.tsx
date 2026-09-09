@@ -16,7 +16,7 @@ import {
 } from '../components/ui';
 import { colors, styles } from '../components/theme';
 import { analyzeGlass, USING_MOCKS } from '../api/client';
-import { DRINK_TYPES, drinkType } from '../lib/catalog';
+import { DRINK_TYPES, clampAbv, drinkType } from '../lib/catalog';
 import { gramsOf } from '../lib/alcohol';
 import { fmtMl, uid } from '../lib/format';
 import type { DrinkKind, ScanResult, Vessel } from '../lib/types';
@@ -27,7 +27,7 @@ export function Scan() {
   const { go, setVessel, addTrago, showToast } = useActions();
   const [phase, setPhase] = useState<Phase>('kind');
   const [kind, setKind] = useState<DrinkKind>(vessel.kind);
-  const [abv, setAbv] = useState(vessel.abv);
+  const [abv, setAbv] = useState(() => clampAbv(vessel.kind, vessel.abv));
   const [ml, setMl] = useState(vessel.ml);
   const [photo, setPhoto] = useState<string | null>(null);
   const [result, setResult] = useState<ScanResult | null>(null);
@@ -85,7 +85,7 @@ export function Scan() {
       if (!mounted.current) return;
       setResult(r);
       setMl(r.ml);
-      setAbv(r.abv);
+      setAbv(clampAbv(kind, r.abv));
       setManual(false);
       setPhase('result');
     } catch (e) {
@@ -158,6 +158,7 @@ export function Scan() {
                       onPress={() => {
                         setKind(d.id);
                         setAbv(d.abv);
+                        setMl(d.ml);
                       }}
                     >
                       {d.label}
@@ -318,8 +319,8 @@ export function Scan() {
           </View>
           <NumberPicker
             label="Graduación % vol"
-            min={0}
-            max={100}
+            min={drinkType(kind).abvRange[0]}
+            max={drinkType(kind).abvRange[1]}
             step={0.5}
             value={abv}
             onChange={setAbv}

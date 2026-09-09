@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import { DRINK_TYPES, PRESETS, drinkType } from '../lib/catalog';
+import { DRINK_TYPES, PRESETS, clampAbv, drinkType } from '../lib/catalog';
 import { gramsOf } from '../lib/alcohol';
 import { fmtAbv, fmtMl, uid } from '../lib/format';
 import type { DrinkKind, Vessel } from '../lib/types';
@@ -23,7 +23,7 @@ export function VesselSheet({
   const [customOpen, setCustomOpen] = useState(false);
   const [ml, setMl] = useState(current.ml);
   const [customKind, setCustomKind] = useState(current.kind);
-  const [abv, setAbv] = useState(current.abv);
+  const [abv, setAbv] = useState(() => clampAbv(current.kind, current.abv));
   const choose = (v: Vessel, add = false) => {
     (add ? onPickAndAdd : onPick)(v);
     onClose();
@@ -87,6 +87,7 @@ export function VesselSheet({
                 onPress={() => {
                   setCustomKind(d.id);
                   setAbv(d.abv);
+                  setMl(d.ml);
                 }}
               >
                 {d.label}

@@ -10,6 +10,8 @@ export interface DrinkType {
   label: string;
   /** Graduación por defecto (% vol). */
   abv: number;
+  /** Volumen típico de esa bebida (ml): lo que se propone al elegirla. */
+  ml: number;
   /** Rango razonable para el slider de corrección. */
   abvRange: [number, number];
   hint: string;

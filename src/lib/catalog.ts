@@ -9,6 +9,7 @@ export const DRINK_TYPES: DrinkType[] = [
   {
     id: 'cerveza',
     label: 'Cerveza',
+    ml: 473,
     abv: 5,
     abvRange: [3, 12],
     hint: 'Rubia, negra, IPA…',
@@ -17,6 +18,7 @@ export const DRINK_TYPES: DrinkType[] = [
   {
     id: 'trago',
     label: 'Trago',
+    ml: 350,
     abv: 8,
     abvRange: [3, 25],
     hint: 'Fernet, vodka, gin, ron…',
@@ -25,6 +27,7 @@ export const DRINK_TYPES: DrinkType[] = [
   {
     id: 'vino',
     label: 'Vino',
+    ml: 150,
     abv: 13,
     abvRange: [8, 18],
     hint: 'Tinto, blanco, rosado',
@@ -33,6 +36,7 @@ export const DRINK_TYPES: DrinkType[] = [
   {
     id: 'shot',
     label: 'Shot',
+    ml: 45,
     abv: 40,
     abvRange: [20, 60],
     hint: 'Tequila, jäger, whisky seco',
@@ -41,6 +45,7 @@ export const DRINK_TYPES: DrinkType[] = [
   {
     id: 'espumante',
     label: 'Espumante',
+    ml: 120,
     abv: 12,
     abvRange: [8, 15],
     hint: 'Champán, prosecco, sidra dulce',
@@ -49,6 +54,7 @@ export const DRINK_TYPES: DrinkType[] = [
   {
     id: 'sidra',
     label: 'Sidra',
+    ml: 330,
     abv: 5,
     abvRange: [3, 8],
     hint: 'Sidra o bebida frutal',
@@ -58,6 +64,16 @@ export const DRINK_TYPES: DrinkType[] = [
 
 export function drinkType(kind: DrinkKind): DrinkType {
   return DRINK_TYPES.find((d) => d.id === kind) ?? DRINK_TYPES[0];
+}
+
+/**
+ * Acota una graduación al rango razonable de la bebida. La usan el escaneo y la
+ * carga manual: elegir "cerveza" no puede terminar en un vaso al 73 % vol.
+ */
+export function clampAbv(kind: DrinkKind, abv: number): number {
+  const [min, max] = drinkType(kind).abvRange;
+  if (!Number.isFinite(abv)) return drinkType(kind).abv;
+  return Math.min(max, Math.max(min, abv));
 }
 
 /**
