@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { DRINK_TYPES, ML_RANGE, PRESETS, clampAbv, drinkType } from '../lib/catalog';
 import { gramsOf } from '../lib/alcohol';
-import { fmtAbv, fmtMl, uid } from '../lib/format';
+import { fmtAbv, fmtGrams, fmtMl, uid } from '../lib/format';
 import type { DrinkKind, Vessel } from '../lib/types';
 import { Button, Card, Chip, Copy, GlassIcon, Kicker, NumberPicker, Sheet, Title } from './ui';
 import { colors, styles } from './theme';
@@ -118,8 +118,7 @@ export function VesselSheet({
             onChange={setAbv}
           />
           <Copy style={{ color: colors.muted }}>
-            {Math.round(gramsOf(ml, abv))} g de alcohol puro. Registrá solo el volumen que tomaste
-            vos.
+            {fmtGrams(gramsOf(ml, abv))} de alcohol puro. Registrá solo el volumen que tomaste vos.
           </Copy>
           <Button variant="dark" onPress={() => choose(custom())}>
             Usar como mi vaso

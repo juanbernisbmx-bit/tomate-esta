@@ -17,7 +17,16 @@ import { VesselSheet } from '../components/VesselSheet';
 import { colors, styles } from '../components/theme';
 import { FEATURED_PRESETS } from '../lib/catalog';
 import { gramsOf, hoursToSober, levelOf } from '../lib/alcohol';
-import { fmtAbv, fmtAgo, fmtBac, fmtClock, fmtHours, fmtMl, pluralWord } from '../lib/format';
+import {
+  fmtAbv,
+  fmtAgo,
+  fmtBac,
+  fmtClock,
+  fmtGrams,
+  fmtHours,
+  fmtMl,
+  pluralWord,
+} from '../lib/format';
 import type { Vessel } from '../lib/types';
 import { useActions, useApp } from '../state/store';
 import { requestUberRide } from '../lib/uber';
@@ -115,7 +124,7 @@ export function Home() {
               {fmtMl(vessel.ml)} · {fmtAbv(vessel.abv)}
             </Copy>
           </View>
-          <Copy style={{ color: colors.lime }}>{Math.round(gramsOf(vessel.ml, vessel.abv))} g</Copy>
+          <Copy style={{ color: colors.lime }}>{fmtGrams(gramsOf(vessel.ml, vessel.abv))}</Copy>
         </View>
       </Card>
       <View style={{ gap: 10, marginTop: 12 }}>
@@ -157,7 +166,7 @@ export function Home() {
               <View style={styles.fill}>
                 <Copy>{t.label}</Copy>
                 <Copy style={styles.small}>
-                  {fmtMl(t.ml)} · {Math.round(t.grams)} g · {fmtAgo(t.at, now)}
+                  {fmtMl(t.ml)} · {fmtGrams(t.grams)} · {fmtAgo(t.at, now)}
                 </Copy>
               </View>
               <Button

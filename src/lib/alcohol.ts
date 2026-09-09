@@ -6,7 +6,7 @@
  * que el back pueda replicar exactamente los mismos números.
  */
 
-import type { DrinkKind, Member, Profile, Sexo, Trago } from './types';
+import type { Member, Profile, Sexo, Trago } from './types';
 
 /** Densidad del etanol (g/ml). */
 export const ETHANOL_DENSITY = 0.789;
@@ -237,24 +237,4 @@ export const LEVELS: Level[] = [
 
 export function levelOf(bac: number): Level {
   return LEVELS.find((l) => bac < l.max) ?? LEVELS[LEVELS.length - 1];
-}
-
-/** Equivalencia en "tragos estándar" (14 g de alcohol puro, convención estadounidense NIAAA). */
-export const STANDARD_DRINK_G = 14;
-
-export function standardDrinks(grams: number): number {
-  return grams / STANDARD_DRINK_G;
-}
-
-/** Texto corto para mostrar debajo de un trago: "≈ 1,7 tragos estándar". */
-export function kindEmojiLabel(kind: DrinkKind): string {
-  const map: Record<DrinkKind, string> = {
-    cerveza: 'Cerveza',
-    vino: 'Vino',
-    espumante: 'Espumante',
-    sidra: 'Sidra',
-    trago: 'Trago',
-    shot: 'Shot',
-  };
-  return map[kind];
 }

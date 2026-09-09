@@ -4,7 +4,7 @@ import { initialState, reducer } from '../src/state/model';
 import { createWriteQueue, decodeSavedState, serializeState } from '../src/state/persistence';
 import { gramsOf, bacAt, bacBreakdown } from '../src/lib/alcohol';
 import { DEFAULT_VESSEL, ML_RANGE } from '../src/lib/catalog';
-import { plural, pluralWord } from '../src/lib/format';
+import { fmtGrams, plural, pluralWord } from '../src/lib/format';
 import type { Trago } from '../src/lib/types';
 const at = 1_700_000_000_000;
 const trago: Trago = {
@@ -179,4 +179,11 @@ test('el volumen aceptado es el mismo en el storage que en la interfaz', () => {
     DEFAULT_VESSEL.ml,
     'un vaso más grande que el máximo del slider no debería sobrevivir',
   );
+});
+
+test('los gramos se formatean igual en todas las pantallas', () => {
+  assert.equal(fmtGrams(24.87), '25 g');
+  assert.equal(fmtGrams(0), '0 g');
+  assert.equal(fmtGrams(0.4), '0 g');
+  assert.equal(fmtGrams(110.2), '110 g');
 });

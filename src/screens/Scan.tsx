@@ -18,7 +18,7 @@ import { colors, styles } from '../components/theme';
 import { analyzeGlass, USING_MOCKS } from '../api/client';
 import { DRINK_TYPES, ML_RANGE, clampAbv, drinkType } from '../lib/catalog';
 import { gramsOf } from '../lib/alcohol';
-import { fmtMl, uid } from '../lib/format';
+import { fmtGrams, fmtMl, uid } from '../lib/format';
 import type { DrinkKind, ScanResult, Vessel } from '../lib/types';
 import { useActions, useApp } from '../state/store';
 type Phase = 'kind' | 'camera' | 'analyzing' | 'result';
@@ -329,7 +329,7 @@ export function Scan() {
           />
           <Card>
             <Kicker>Alcohol puro estimado</Kicker>
-            <Title style={{ color: colors.amber }}>{Math.round(gramsOf(ml, abv))} g</Title>
+            <Title style={{ color: colors.amber }}>{fmtGrams(gramsOf(ml, abv))}</Title>
           </Card>
           <Button onPress={() => save(true)}>Guardar y registrar</Button>
           <Button variant="dark" onPress={() => save(false)}>

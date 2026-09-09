@@ -15,7 +15,7 @@ import {
   Title,
 } from '../components/ui';
 import { colors, styles } from '../components/theme';
-import { fmtBac, fmtNum, plural, pluralWord } from '../lib/format';
+import { fmtBac, fmtGrams, fmtNum, plural, pluralWord } from '../lib/format';
 import type { Sexo } from '../lib/types';
 import { useActions, useApp } from '../state/store';
 import { useGroupStats } from '../state/selectors';
@@ -122,7 +122,7 @@ export function Profile() {
               <Copy>
                 {new Date(h.closedAt).toLocaleDateString('es-AR')} · {plural(h.tragos, 'registro')}
               </Copy>
-              <Copy style={styles.small}>{Math.round(h.grams)} g de alcohol puro registrados</Copy>
+              <Copy style={styles.small}>{fmtGrams(h.grams)} de alcohol puro registrados</Copy>
             </Card>
           ))}
         </View>
