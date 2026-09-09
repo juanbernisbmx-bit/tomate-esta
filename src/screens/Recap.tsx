@@ -3,8 +3,8 @@ import { Share, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button, Card, Copy, Disclaimer, Kicker, Page, Stat, Title } from '../components/ui';
 import { colors, styles } from '../components/theme';
-import { bacAt, bacFromGrams, hoursToSober } from '../lib/alcohol';
-import { fmtBac, fmtHours, fmtMl, plural } from '../lib/format';
+import { bacAt, bacPeakOfNight, hoursToSober } from '../lib/alcohol';
+import { fmtBac, fmtHours, fmtMl, plural, pluralWord } from '../lib/format';
 import { useActions, useApp } from '../state/store';
 export function Recap() {
   const { profile, tragos, group } = useApp();
@@ -20,7 +20,7 @@ export function Recap() {
     closing.current = true;
     if (tragos.length)
       closeNight({
-        peakBac: bacFromGrams(grams, profile.peso, profile.sexo),
+        peakBac: bacPeakOfNight(tragos, profile),
         tragos: tragos.length,
         grams,
       });
@@ -47,7 +47,7 @@ export function Recap() {
         )}
       </LinearGradient>
       <View style={styles.row}>
-        <Stat value={tragos.length} label="Registros" />
+        <Stat value={tragos.length} label={pluralWord(tragos.length, 'Registro')} />
         <Stat value={fmtMl(ml)} label="Volumen total" />
         <Stat value={Math.round(grams)} label="Alcohol · g" />
       </View>

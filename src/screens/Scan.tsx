@@ -68,17 +68,22 @@ export function Scan() {
       if (!shot || !mounted.current) return;
       setPhase('analyzing');
       const context = ImageManipulator.manipulate(shot.uri);
-      context.resize({ width: Math.min(640, shot.width) });
-      const rendered = await context.renderAsync();
-      const compressed = await rendered.saveAsync({
-        format: SaveFormat.JPEG,
-        compress: 0.7,
-        base64: true,
-      });
-      context.release();
-      rendered.release();
-      if (!compressed.base64) throw new Error('No pudimos preparar la foto.');
-      const data = `data:image/jpeg;base64,${compressed.base64}`;
+      let rendered: Awaited<ReturnType<typeof context.renderAsync>> | null = null;
+      let base64: string | null | undefined;
+      try {
+        context.resize({ width: Math.min(640, shot.width) });
+        rendered = await context.renderAsync();
+        base64 = (
+          await rendered.saveAsync({ format: SaveFormat.JPEG, compress: 0.7, base64: true })
+        ).base64;
+      } finally {
+        // Si el redimensionado o el guardado fallan, las imágenes nativas hay
+        // que soltarlas igual.
+        rendered?.release();
+        context.release();
+      }
+      if (!base64) throw new Error('No pudimos preparar la foto.');
+      const data = `data:image/jpeg;base64,${base64}`;
       if (!mounted.current) return;
       setPhoto(data);
       const r = await analyzeGlass(data, kind);
@@ -206,10 +211,7 @@ export function Scan() {
                 mode="picture"
                 autofocus="on"
                 style={StyleSheet.absoluteFill}
-                onCameraReady={() => {
-                  setReady(true);
-                  busy.current = false;
-                }}
+                onCameraReady={() => setReady(true)}
                 onMountError={() => {
                   setReady(false);
                   setError('La cámara no está disponible. Podés cargar las medidas a mano.');
@@ -340,10 +342,12 @@ export function Scan() {
               setError('');
               setReady(false);
               setPhoto(null);
+              setResult(null);
+              setManual(false);
               setPhase('camera');
             }}
           >
-            Volver a sacar foto
+            {photo ? 'Volver a sacar foto' : 'Sacar una foto del vaso'}
           </Button>
           <Disclaimer />
         </>

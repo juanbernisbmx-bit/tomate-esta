@@ -15,7 +15,7 @@ import {
   Title,
 } from '../components/ui';
 import { colors, styles } from '../components/theme';
-import { fmtBac, fmtNum, plural } from '../lib/format';
+import { fmtBac, fmtNum, plural, pluralWord } from '../lib/format';
 import type { Sexo } from '../lib/types';
 import { useActions, useApp } from '../state/store';
 import { useGroupStats } from '../state/selectors';
@@ -42,11 +42,11 @@ export function Profile() {
         {profile.peso} kg · {profile.edad} años
       </Copy>
       <View style={[styles.row, { marginTop: 20 }]}>
-        <Stat value={nights} label="Noches registradas" />
+        <Stat value={nights} label={pluralWord(nights, 'Noche registrada', 'Noches registradas')} />
         <Stat value={fmtBac(bac)} label="Estimación · %" />
       </View>
       <View style={[styles.row, { marginTop: 10 }]}>
-        <Stat value={total} label="Registros totales" />
+        <Stat value={total} label={pluralWord(total, 'Registro total', 'Registros totales')} />
         <Stat value={fmtNum(total / Math.max(1, nights))} label="Registros / noche" />
       </View>
       <View style={styles.section}>

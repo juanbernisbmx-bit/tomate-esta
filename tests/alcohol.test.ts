@@ -7,8 +7,11 @@ import {
   bacBreakdown,
   bacFromGrams,
   bacOfMember,
+  LEVELS,
+  bacPeakOfNight,
   gramsOf,
   hoursToSober,
+  levelOf,
   pacePerHour,
 } from '../src/lib/alcohol';
 import type { Member, Profile, Trago } from '../src/lib/types';
@@ -133,4 +136,37 @@ test('el ritmo mira las últimas dos horas y las horas a cero salen de la tasa',
 
   cerca(hoursToSober(0.45), 0.45 / ELIMINATION_PER_HOUR, 'horas a cero');
   assert.equal(hoursToSober(0), 0);
+});
+
+test('el pico de la noche es el máximo que alcanzó, no el total sin eliminar', () => {
+  // Cinco vasos repartidos en cinco horas: convertir los gramos de una tanda
+  // daba un pico que nunca ocurrió, porque ignora lo que el hígado fue sacando.
+  const noche = [hace(300), hace(240), hace(180), hace(120), hace(60)];
+  const total = bacFromGrams(
+    noche.reduce((s, t) => s + t.grams, 0),
+    perfil.peso,
+    perfil.sexo,
+  );
+  const pico = bacPeakOfNight(noche, perfil, now);
+  assert.ok(pico < total, `el pico real (${pico.toFixed(2)}) no puede llegar al bruto`);
+  assert.ok(pico >= bacAt(noche, perfil, now), 'nunca por debajo de la estimación actual');
+  // Y es el máximo de la curva: ningún instante de la noche lo supera.
+  for (let m = 0; m <= 300; m += 10) {
+    assert.ok(bacAt(noche, perfil, now - m * MIN) <= pico + 0.0001, `superado a los ${m} min`);
+  }
+  assert.equal(bacPeakOfNight([], perfil, now), 0);
+});
+
+test('cada nivel se distingue del anterior a simple vista', () => {
+  const vistos = new Map<string, string>();
+  for (const l of LEVELS) {
+    assert.ok(!vistos.has(l.color), `${l.key} repite el color de ${vistos.get(l.color)}`);
+    vistos.set(l.color, l.key);
+    assert.equal(l.gradient.length, 2, `${l.key}: el gradiente necesita dos colores`);
+    assert.ok(l.gradient[0] === l.color, `${l.key}: el gradiente debería arrancar en su color`);
+  }
+  // Los umbrales siguen mandando: el cambio de color acompaña al de mensaje.
+  assert.notEqual(levelOf(0.2).color, levelOf(0.4).color, '0,2 y 0,4 se ven igual');
+  assert.notEqual(levelOf(0.4).color, levelOf(0.6).color, '0,4 y 0,6 se ven igual');
+  assert.notEqual(levelOf(0.6).color, levelOf(0.9).color, '0,6 y 0,9 se ven igual');
 });

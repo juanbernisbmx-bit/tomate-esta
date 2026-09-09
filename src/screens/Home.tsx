@@ -17,7 +17,7 @@ import { VesselSheet } from '../components/VesselSheet';
 import { colors, styles } from '../components/theme';
 import { FEATURED_PRESETS } from '../lib/catalog';
 import { gramsOf, hoursToSober, levelOf } from '../lib/alcohol';
-import { fmtAbv, fmtAgo, fmtBac, fmtClock, fmtHours, fmtMl } from '../lib/format';
+import { fmtAbv, fmtAgo, fmtBac, fmtClock, fmtHours, fmtMl, pluralWord } from '../lib/format';
 import type { Vessel } from '../lib/types';
 import { useActions, useApp } from '../state/store';
 import { requestUberRide } from '../lib/uber';
@@ -81,8 +81,8 @@ export function Home() {
           )}
         </LinearGradient>
         <View style={styles.row}>
-          <Stat value={tragos.length} label="Registros" />
-          <Stat value={total} label="Personas" />
+          <Stat value={tragos.length} label={pluralWord(tragos.length, 'Registro')} />
+          <Stat value={total} label={pluralWord(total, 'Persona')} />
           <Stat
             value={Math.round(tragos.reduce((sum, t) => sum + t.grams, 0))}
             label="Alcohol · g"

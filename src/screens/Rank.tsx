@@ -4,7 +4,7 @@ import { Button, Card, Chip, Copy, Disclaimer, Kicker, Page, Stat, Title } from 
 import { colors, styles } from '../components/theme';
 import { LINE_REFERENCE, levelOf } from '../lib/alcohol';
 import { pollGroup, USING_MOCKS } from '../api/client';
-import { fmtAgo, fmtBac, fmtNum, plural } from '../lib/format';
+import { fmtAgo, fmtBac, fmtNum, plural, pluralWord } from '../lib/format';
 import { useActions, useApp } from '../state/store';
 import { useGroupStats } from '../state/selectors';
 export function Rank() {
@@ -139,8 +139,8 @@ export function Rank() {
         ))}
       </View>
       <View style={[styles.row, { marginTop: 18 }]}>
-        <Stat value={rows.length} label="Personas" />
-        <Stat value={totalTragos} label="Registros del grupo" />
+        <Stat value={rows.length} label={pluralWord(rows.length, 'Persona')} />
+        <Stat value={totalTragos} label={`${pluralWord(totalTragos, 'Registro')} del grupo`} />
       </View>
       <View style={[styles.row, { marginTop: 10 }]}>
         <Stat

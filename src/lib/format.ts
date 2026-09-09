@@ -53,7 +53,12 @@ export function uid(prefix = 'id'): string {
   return `${prefix}_${Math.random().toString(36).slice(2, 9)}${Date.now().toString(36).slice(-3)}`;
 }
 
+/** Solo el sustantivo concordado: `pluralWord(1, 'Registro')` → "Registro". */
+export function pluralWord(n: number, singular: string, pluralForm = `${singular}s`): string {
+  return n === 1 ? singular : pluralForm;
+}
+
 /** Cuenta con el sustantivo concordado: `plural(1, 'registro')` → "1 registro". */
 export function plural(n: number, singular: string, pluralForm = `${singular}s`): string {
-  return `${n} ${n === 1 ? singular : pluralForm}`;
+  return `${n} ${pluralWord(n, singular, pluralForm)}`;
 }

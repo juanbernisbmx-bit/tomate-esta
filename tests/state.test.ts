@@ -4,7 +4,7 @@ import { initialState, reducer } from '../src/state/model';
 import { createWriteQueue, decodeSavedState, serializeState } from '../src/state/persistence';
 import { gramsOf, bacAt, bacBreakdown } from '../src/lib/alcohol';
 import { DEFAULT_VESSEL } from '../src/lib/catalog';
-import { plural } from '../src/lib/format';
+import { plural, pluralWord } from '../src/lib/format';
 import type { Trago } from '../src/lib/types';
 const at = 1_700_000_000_000;
 const trago: Trago = {
@@ -115,4 +115,15 @@ test('los contadores concuerdan en singular y plural', () => {
     plural(3, 'tipo de vaso registrado', 'tipos de vaso registrados'),
     '3 tipos de vaso registrados',
   );
+});
+
+test('las etiquetas de los contadores concuerdan con su número', () => {
+  assert.equal(pluralWord(1, 'Registro'), 'Registro');
+  assert.equal(pluralWord(0, 'Registro'), 'Registros');
+  assert.equal(pluralWord(2, 'Registro'), 'Registros');
+  assert.equal(pluralWord(1, 'Noche registrada', 'Noches registradas'), 'Noche registrada');
+  assert.equal(pluralWord(3, 'Noche registrada', 'Noches registradas'), 'Noches registradas');
+  // plural() sigue apoyándose en el mismo criterio.
+  assert.equal(plural(1, 'registro'), '1 registro');
+  assert.equal(plural(2, 'registro'), '2 registros');
 });

@@ -54,11 +54,12 @@ interface Dose {
  * el hígado no sigue descontando sobre una alcoholemia que ya llegó a cero, así
  * que lo que se tome después de un bajón largo vuelve a contar entero.
  *
- * `current` es el % en `now`; `peak` es a dónde llega si no toma nada más.
+ * `current` es el % en `now`; `peak` es a dónde llega si no toma nada más;
+ * `highest` es lo más alto que estuvo en toda la noche.
  */
-function simulate(doses: Dose[], now: number): { current: number; peak: number } {
+function simulate(doses: Dose[], now: number): { current: number; peak: number; highest: number } {
   const taken = doses.filter((d) => d.at <= now && d.peak > 0 && Number.isFinite(d.at));
-  if (taken.length === 0) return { current: 0, peak: 0 };
+  if (taken.length === 0) return { current: 0, peak: 0, highest: 0 };
 
   const start = Math.min(...taken.map((d) => d.at));
   const marks = new Set<number>([start, now]);
@@ -72,11 +73,15 @@ function simulate(doses: Dose[], now: number): { current: number; peak: number }
   let bac = 0;
   let current = 0;
   let peak = 0;
+  let highest = 0;
 
   for (let i = 0; i < stops.length; i++) {
     const t = stops[i];
     if (t === now) current = bac;
     if (t >= now) peak = Math.max(peak, bac);
+    // Dentro de cada tramo la curva es una recta, así que el máximo de la noche
+    // cae siempre en un quiebre.
+    highest = Math.max(highest, bac);
 
     const next = stops[i + 1];
     if (next === undefined) break;
@@ -87,7 +92,8 @@ function simulate(doses: Dose[], now: number): { current: number; peak: number }
     bac = Math.max(0, bac + rate * (next - t));
   }
 
-  return { current, peak: Math.max(peak, current) };
+  const finalPeak = Math.max(peak, current);
+  return { current, peak: finalPeak, highest: Math.max(highest, finalPeak) };
 }
 
 function dosesOf(tragos: Trago[], profile: Profile): Dose[] {
@@ -150,6 +156,19 @@ function memberDoses(m: Member): Dose[] {
   return Array.from({ length: n }, (_, i) => ({ at: first + i * step, peak: total / n }));
 }
 
+/**
+ * Lo más alto que estuvo la estimación en toda la noche. El resumen guardaba en
+ * su lugar el total de gramos convertido de una, sin descontar lo que el hígado
+ * venía eliminando, así que archivaba un pico que nunca ocurrió.
+ */
+export function bacPeakOfNight(
+  tragos: Trago[],
+  profile: Profile,
+  now: number = Date.now(),
+): number {
+  return simulate(dosesOf(tragos, profile), now).highest;
+}
+
 /** Horas hasta volver a cero. */
 export function hoursToSober(bac: number): number {
   return bac / ELIMINATION_PER_HOUR;
@@ -192,8 +211,8 @@ export const LEVELS: Level[] = [
     name: 'Hacé una pausa',
     range: '0,3 – 0,5',
     sub: 'Alterná con agua. Si tomaste, no manejes.',
-    color: '#C6F24E',
-    gradient: ['#C6F24E', '#91BB33'],
+    color: '#E8E24A',
+    gradient: ['#E8E24A', '#B5A82A'],
     max: 0.5,
   },
   {
