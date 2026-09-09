@@ -1,0 +1,80 @@
+import { Shell } from './components/Shell';
+import { TabBar } from './components/TabBar';
+import { Toast } from './components/Toast';
+import { Welcome } from './screens/Welcome';
+import { Onboarding } from './screens/Onboarding';
+import { GroupJoin } from './screens/GroupJoin';
+import { Home } from './screens/Home';
+import { Scan } from './screens/Scan';
+import { Rank } from './screens/Rank';
+import { Profile } from './screens/Profile';
+import { Recap } from './screens/Recap';
+import { bacFromGrams } from './lib/alcohol';
+import { fmtBac } from './lib/format';
+import type { Screen, Vessel } from './lib/types';
+import { useActions, useApp } from './state/store';
+
+const WITH_TABS: Screen[] = ['home', 'rank', 'profile', 'recap'];
+
+export default function App() {
+  const state = useApp();
+  const actions = useActions();
+  const { screen, profile, vessel, group } = state;
+
+  /** Suma un trago desde cualquier pantalla con tabs. */
+  const sumar = (v: Vessel = vessel) => {
+    const t = actions.addTrago(v, v.id === vessel.id ? 'boton' : 'preset');
+    const suma = bacFromGrams(t.grams, profile.peso, profile.sexo);
+    actions.showToast(`+1 ${v.label} · +${fmtBac(suma)} ‰`, t.id);
+  };
+
+  return (
+    <Shell>
+      {screen === 'welcome' && <Welcome onStart={() => actions.go('onboarding')} />}
+
+      {screen === 'onboarding' && (
+        <Onboarding
+          profile={profile}
+          onChange={actions.setProfile}
+          onExit={() => actions.go('welcome')}
+          onDone={() => {
+            actions.finishOnboarding();
+            actions.go(group ? 'home' : 'group');
+          }}
+        />
+      )}
+
+      {screen === 'group' && (
+        <GroupJoin
+          onJoin={(g) => {
+            actions.setGroup(g);
+            actions.go('home');
+          }}
+        />
+      )}
+
+      {screen === 'home' && <Home />}
+      {screen === 'scan' && <Scan />}
+      {screen === 'rank' && <Rank />}
+      {screen === 'profile' && <Profile />}
+      {screen === 'recap' && <Recap />}
+
+      {WITH_TABS.includes(screen) && (
+        <TabBar
+          screen={screen}
+          onGo={actions.go}
+          onAdd={() => sumar()}
+          onScan={() => actions.go('scan')}
+        />
+      )}
+
+      <Toast
+        toast={state.toast}
+        onUndo={actions.undoTrago}
+        onClose={actions.hideToast}
+        offset={WITH_TABS.includes(screen) ? 'bottom-[104px]' : 'bottom-8'}
+      />
+
+    </Shell>
+  );
+}

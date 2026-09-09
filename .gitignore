@@ -1,0 +1,16 @@
+node_modules
+dist
+dist-ssr
+.vite
+*.tsbuildinfo
+*.local
+.DS_Store
+.env
+.env.local
+
+# Proyectos nativos generados por Capacitor
+ios
+android
+
+# Config local de herramientas
+.claude
