@@ -165,7 +165,7 @@ export function useActions(): AppActions {
   return ctx;
 }
 
-/** Reloj compartido: hace que el ‰ baje solo sin re-renderizar de más. */
+/** Reloj compartido: hace que el % baje solo sin re-renderizar de más. */
 export function useNow(intervalMs = 20_000): number {
   const [now, tick] = useReducer(() => Date.now(), Date.now());
   useEffect(() => {

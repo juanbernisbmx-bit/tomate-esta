@@ -62,12 +62,12 @@ export function Home() {
           <View style={styles.between}>
             <Copy style={{ color: colors.night, flex: 1, maxWidth: 190 }}>{level.sub}</Copy>
             <Title style={{ color: colors.night, fontSize: 43, lineHeight: 54 }}>
-              {fmtBac(bac)} ‰
+              {fmtBac(bac)} %
             </Title>
           </View>
           {subiendo > 0.005 && (
             <Copy style={{ color: colors.night, fontSize: 12 }}>
-              ≈ {fmtBac(subiendo)} ‰ pendiente de absorción
+              ≈ {fmtBac(subiendo)} % pendiente de absorción
             </Copy>
           )}
         </LinearGradient>

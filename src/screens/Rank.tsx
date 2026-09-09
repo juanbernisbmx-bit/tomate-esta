@@ -103,7 +103,7 @@ export function Rank() {
                 </Copy>
               </View>
               <Title style={{ fontSize: 28, color: row.me ? colors.lime : colors.ink }}>
-                {mode === 'tragos' ? row.tragos : `${fmtBac(row.bac)} ‰`}
+                {mode === 'tragos' ? row.tragos : `${fmtBac(row.bac)} %`}
               </Title>
             </View>
             <Copy style={styles.small}>

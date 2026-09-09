@@ -43,7 +43,7 @@ export function Profile() {
       </Copy>
       <View style={[styles.row, { marginTop: 20 }]}>
         <Stat value={nights} label="Noches registradas" />
-        <Stat value={fmtBac(bac)} label="Estimación · ‰" />
+        <Stat value={fmtBac(bac)} label="Estimación · %" />
       </View>
       <View style={[styles.row, { marginTop: 10 }]}>
         <Stat value={total} label="Registros totales" />

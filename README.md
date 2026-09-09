@@ -80,7 +80,9 @@ El análisis envía JPEG con ancho máximo de 640 px y calidad 0,7, codificado c
 
 ## Estimaciones
 
-Se conserva la lógica existente en `src/lib/alcohol.ts`: gramos = ml × (% vol / 100) × 0,789; distribución de Widmark; absorción lineal de 20 minutos y eliminación de 0,15 ‰ por hora desde el primer registro. Es un modelo simplificado heredado, **no validado clínicamente**. No contempla todas las diferencias individuales ni sesiones separadas por pausas largas.
+La lógica vive en `src/lib/alcohol.ts`: gramos = ml × (% vol / 100) × 0,789; distribución de Widmark; absorción lineal de 20 minutos y eliminación de 0,15 por hora. La curva se integra tramo por tramo entre cada toma y cada fin de absorción, acotada a cero al cerrar cada tramo: la eliminación no sigue descontando sobre una estimación que ya llegó a cero, así que lo que se toma después de una pausa larga vuelve a contar entero. Los integrantes del grupo pasan por el mismo simulador —sus gramos acumulados se reparten en sus tomas entre `startedAt` y `lastAt`—, de modo que con el mismo consumo, peso y sexo un integrante y el usuario dan el mismo número. Sigue siendo un modelo simplificado, **no validado clínicamente**, y no contempla las diferencias individuales.
+
+Los valores se muestran con el símbolo `%`. Las cifras están en la escala del modelo de Widmark (la misma en la que 0,5 es el límite legal argentino), no reescaladas a porcentaje de masa por volumen.
 
 El campo legado `peakBac` en el historial representa la carga teórica acumulada sin eliminación; no es un pico medido ni observado. No se muestra como medición. Cerrar la noche reinicia el registro visible, pero no significa que el alcohol haya desaparecido del organismo. Antes de publicar corresponde revisar las estimaciones y las afirmaciones del producto.
 

@@ -14,50 +14,96 @@ export const ETHANOL_DENSITY = 0.789;
 /** Factor de distribución corporal de Widmark, por sexo. */
 export const R_FACTOR: Record<Sexo, number> = { H: 0.68, M: 0.55, X: 0.615 };
 
-/** Eliminación hepática promedio, en ‰ por hora. */
+/** Eliminación hepática promedio, en % por hora. */
 export const ELIMINATION_PER_HOUR = 0.15;
 
 /** Tiempo de absorción de un trago (minutos): la suba no es instantánea. */
 export const ABSORPTION_MIN = 20;
 
-/** Línea de referencia que se dibuja en las barras del ranking (‰). */
+/** Línea de referencia que se dibuja en las barras del ranking (%). */
 export const LINE_REFERENCE = 1.0;
 
 const HOUR = 3_600_000;
+const ABSORPTION_MS = ABSORPTION_MIN * 60_000;
+const ELIMINATION_PER_MS = ELIMINATION_PER_HOUR / HOUR;
 
 /** Gramos de alcohol puro de X ml a Y % vol. */
 export function gramsOf(ml: number, abv: number): number {
   return ml * (abv / 100) * ETHANOL_DENSITY;
 }
 
-/** Cuánto ‰ suma, como pico, esa cantidad de gramos para esta persona. */
+/** Cuánto % suma, como pico, esa cantidad de gramos para esta persona. */
 export function bacFromGrams(grams: number, peso: number, sexo: Sexo): number {
   const r = R_FACTOR[sexo] ?? R_FACTOR.X;
   return grams / (peso * r);
 }
 
+/** Una dosis ya convertida al % de pico que aporta, con el instante en que se tomó. */
+interface Dose {
+  at: number;
+  peak: number;
+}
+
 /**
- * Alcohol en sangre estimado (‰) en un momento dado.
- * Cada trago sube de forma gradual durante ABSORPTION_MIN y el hígado
- * descuenta ELIMINATION_PER_HOUR desde el primer trago de la noche.
+ * Integra la curva de alcoholemia tramo por tramo.
+ *
+ * Los quiebres son cada toma y cada fin de absorción: entre dos quiebres
+ * consecutivos la tasa de absorción no cambia, así que el % se mueve en línea
+ * recta y alcanza con acotarlo a cero al cerrar cada tramo. Ese piso es lo que
+ * distingue este modelo de restar una sola recta de eliminación sobre el total:
+ * el hígado no sigue descontando sobre una alcoholemia que ya llegó a cero, así
+ * que lo que se tome después de un bajón largo vuelve a contar entero.
+ *
+ * `current` es el % en `now`; `peak` es a dónde llega si no toma nada más.
  */
-export function bacAt(tragos: Trago[], profile: Profile, now: number = Date.now()): number {
-  if (tragos.length === 0) return 0;
+function simulate(doses: Dose[], now: number): { current: number; peak: number } {
+  const taken = doses.filter((d) => d.at <= now && d.peak > 0 && Number.isFinite(d.at));
+  if (taken.length === 0) return { current: 0, peak: 0 };
 
-  let absorbed = 0;
-  let first = Infinity;
+  const start = Math.min(...taken.map((d) => d.at));
+  const marks = new Set<number>([start, now]);
+  for (const d of taken) {
+    marks.add(d.at);
+    // Puede caer después de `now`: es lo que todavía tiene para subir.
+    marks.add(d.at + ABSORPTION_MS);
+  }
+  const stops = [...marks].filter((t) => t >= start).sort((a, b) => a - b);
 
-  for (const t of tragos) {
-    if (t.at > now) continue;
-    first = Math.min(first, t.at);
-    const progress = Math.min(1, (now - t.at) / (ABSORPTION_MIN * 60_000));
-    absorbed += bacFromGrams(t.grams, profile.peso, profile.sexo) * progress;
+  let bac = 0;
+  let current = 0;
+  let peak = 0;
+
+  for (let i = 0; i < stops.length; i++) {
+    const t = stops[i];
+    if (t === now) current = bac;
+    if (t >= now) peak = Math.max(peak, bac);
+
+    const next = stops[i + 1];
+    if (next === undefined) break;
+
+    let absorbing = 0;
+    for (const d of taken) if (d.at <= t && t < d.at + ABSORPTION_MS) absorbing += d.peak;
+    const rate = absorbing / ABSORPTION_MS - ELIMINATION_PER_MS;
+    bac = Math.max(0, bac + rate * (next - t));
   }
 
-  if (!isFinite(first)) return 0;
+  return { current, peak: Math.max(peak, current) };
+}
 
-  const eliminated = ((now - first) / HOUR) * ELIMINATION_PER_HOUR;
-  return Math.max(0, absorbed - eliminated);
+function dosesOf(tragos: Trago[], profile: Profile): Dose[] {
+  return tragos.map((t) => ({
+    at: t.at,
+    peak: bacFromGrams(t.grams, profile.peso, profile.sexo),
+  }));
+}
+
+/**
+ * Alcohol en sangre estimado (%) en un momento dado.
+ * Cada trago sube de forma gradual durante ABSORPTION_MIN y el hígado
+ * descuenta ELIMINATION_PER_HOUR mientras quede alcohol en sangre.
+ */
+export function bacAt(tragos: Trago[], profile: Profile, now: number = Date.now()): number {
+  return simulate(dosesOf(tragos, profile), now).current;
 }
 
 export interface BacBreakdown {
@@ -71,43 +117,37 @@ export interface BacBreakdown {
 
 /**
  * Igual que bacAt() pero además dice cuánto falta absorber, para poder
- * mostrar "0,42 ‰ · +0,39 subiendo" apenas se suma un trago.
+ * mostrar "0,42 % · +0,39 subiendo" apenas se suma un trago.
  */
 export function bacBreakdown(
   tragos: Trago[],
   profile: Profile,
   now: number = Date.now(),
 ): BacBreakdown {
-  if (tragos.length === 0) return { current: 0, pending: 0, peak: 0 };
-
-  let absorbed = 0;
-  let total = 0;
-  let first = Infinity;
-
-  for (const t of tragos) {
-    if (t.at > now) continue;
-    first = Math.min(first, t.at);
-    const full = bacFromGrams(t.grams, profile.peso, profile.sexo);
-    const progress = Math.min(1, (now - t.at) / (ABSORPTION_MIN * 60_000));
-    absorbed += full * progress;
-    total += full;
-  }
-
-  if (!isFinite(first)) return { current: 0, pending: 0, peak: 0 };
-
-  const eliminated = ((now - first) / HOUR) * ELIMINATION_PER_HOUR;
-  const current = Math.max(0, absorbed - eliminated);
-  const peak = Math.max(current, total - eliminated);
-
+  const { current, peak } = simulate(dosesOf(tragos, profile), now);
   return { current, pending: Math.max(0, peak - current), peak };
 }
 
-/** Lo mismo pero para un integrante del grupo (llega con gramos acumulados). */
+/**
+ * Lo mismo para un integrante del grupo, que llega con gramos acumulados en vez
+ * de la lista de tragos: repartimos esos gramos en sus `tragos` tomas, repartidas
+ * de `startedAt` a `lastAt`, y los pasamos por el mismo simulador. Es una
+ * aproximación, pero usa la misma curva que el cálculo propio: con el mismo
+ * consumo, peso y sexo, un integrante y vos dan el mismo número.
+ */
 export function bacOfMember(m: Member, now: number = Date.now()): number {
-  const peak = bacFromGrams(m.grams, m.peso, m.sexo);
-  const desde = m.startedAt || m.lastAt;
-  const eliminated = ((now - desde) / HOUR) * ELIMINATION_PER_HOUR;
-  return Math.max(0, peak - eliminated);
+  return simulate(memberDoses(m), now).current;
+}
+
+function memberDoses(m: Member): Dose[] {
+  const n = Math.max(0, Math.floor(m.tragos));
+  const total = bacFromGrams(m.grams, m.peso, m.sexo);
+  if (n === 0 || !(total > 0)) return [];
+  const last = m.lastAt || m.startedAt;
+  const first = m.startedAt || last;
+  if (n === 1 || last <= first) return [{ at: last, peak: total }];
+  const step = (last - first) / (n - 1);
+  return Array.from({ length: n }, (_, i) => ({ at: first + i * step, peak: total / n }));
 }
 
 /** Horas hasta volver a cero. */
@@ -115,7 +155,7 @@ export function hoursToSober(bac: number): number {
   return bac / ELIMINATION_PER_HOUR;
 }
 
-/** Ritmo de las últimas 2 horas, en ‰/h. */
+/** Ritmo de las últimas 2 horas, en %/h. */
 export function pacePerHour(tragos: Trago[], profile: Profile, now: number = Date.now()): number {
   const from = now - 2 * HOUR;
   const recent = tragos.filter((t) => t.at >= from);
