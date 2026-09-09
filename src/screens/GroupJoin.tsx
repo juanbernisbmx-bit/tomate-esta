@@ -1,121 +1,123 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button } from '../components/ui';
-import { fetchGroup } from '../api/client';
-import { initials } from '../lib/format';
+import { ActivityIndicator, View } from 'react-native';
+import { Button, Card, Copy, Input, Kicker, Page, Title } from '../components/ui';
+import { colors, styles } from '../components/theme';
+import { createGroup, fetchGroup, USING_MOCKS } from '../api/client';
 import type { Group } from '../lib/types';
-
-const CODE_LEN = 4;
-
-export function GroupJoin({ onJoin }: { onJoin: (g: Group) => void }) {
-  const [code, setCode] = useState('TMT4');
+export function GroupJoin({ onJoin, onSkip }: { onJoin: (g: Group) => void; onSkip: () => void }) {
+  const [code, setCode] = useState(USING_MOCKS ? 'TMT4' : '');
+  const [name, setName] = useState('Mi grupo');
   const [found, setFound] = useState<Group | null>(null);
   const [loading, setLoading] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const search = async (value: string) => {
-    if (value.length < CODE_LEN) return setFound(null);
-    setLoading(true);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState('');
+  const active = useRef(true);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
+  useEffect(() => {
+    let cancelled = false;
+    setFound(null);
+    setError('');
+    setLoading(code.length === 4);
+    if (code.length !== 4) return;
+    const timer = setTimeout(() => {
+      fetchGroup(code)
+        .then((g) => {
+          if (!cancelled) setFound(g);
+        })
+        .catch(() => {
+          if (!cancelled) setError('No encontramos el grupo. Revisá el código y tu conexión.');
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [code]);
+  const create = async () => {
+    if (creating) return;
+    setCreating(true);
+    setError('');
     try {
-      setFound(await fetchGroup(value));
+      const g = await createGroup(name.trim() || 'Mi grupo');
+      if (active.current) onJoin(g);
+    } catch {
+      if (active.current) setError('No pudimos crear el grupo. Intentá de nuevo.');
     } finally {
-      setLoading(false);
+      if (active.current) setCreating(false);
     }
   };
-
-  // Buscamos el código que viene precargado apenas entra.
-  useEffect(() => {
-    void search(code);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const onCode = (raw: string) => {
-    const clean = raw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, CODE_LEN);
-    setCode(clean);
-    void search(clean);
-  };
-
-  const createNew = async () => {
-    const g = await fetchGroup(code || 'NEW1');
-    onJoin({ ...g, name: 'Tu grupo', members: [] });
-  };
-
   return (
-    <div className="relative flex h-full flex-col px-6 pt-[70px] pb-10">
-      <div className="mb-1.5 font-display text-[40px] leading-none uppercase">Tu barra</div>
-      <div className="mb-7 text-[13.5px] leading-relaxed text-ink/65">
-        Unite con el código que pasa el grupo.
-      </div>
-
-      {/* Casilleros del código: un input invisible arriba capta el teclado */}
-      <div className="relative mb-3.5">
-        <input
-          ref={inputRef}
-          value={code}
-          onChange={(e) => onCode(e.target.value)}
-          inputMode="text"
-          autoCapitalize="characters"
-          autoComplete="off"
-          spellCheck={false}
-          className="absolute inset-0 z-10 w-full opacity-0"
-          aria-label="Código del grupo"
-        />
-        <div className="flex gap-2.5">
-          {Array.from({ length: CODE_LEN }, (_, i) => {
-            const char = code[i] ?? '';
-            const active = i === code.length;
-            return (
-              <div
-                key={i}
-                className={`flex h-[66px] flex-1 items-center justify-center rounded-[14px] border bg-surface font-display text-[30px] leading-none ${
-                  active ? 'border-2 border-lime text-lime' : 'border-white/14 text-amber'
-                }`}
-              >
-                {char}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {loading && (
-        <div className="rounded-[18px] border border-white/10 bg-surface p-4.5 text-[13px] text-ink/60">
-          Buscando el grupo…
-        </div>
+    <Page style={{ gap: 20 }}>
+      <Kicker color={colors.amber}>Juntos, con cuidado</Kicker>
+      <Title>Tu grupo</Title>
+      <Copy style={{ color: colors.muted }}>
+        Unite con el código que comparte tu grupo o llevá tu registro personal.
+      </Copy>
+      {USING_MOCKS && (
+        <Card>
+          <Copy style={{ color: colors.amber }}>
+            Modo demo: los integrantes son de ejemplo. No se comparte información con otras
+            personas.
+          </Copy>
+        </Card>
       )}
-
-      {found && !loading && (
-        <div
-          className="mb-3 rounded-[18px] border border-white/10 bg-surface p-4.5"
-          style={{ animation: 'var(--animate-pop)' }}
-        >
-          <div className="mb-3 text-[11px] leading-none font-medium tracking-[.18em] text-ink/60">
-            GRUPO ENCONTRADO
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="grid h-[46px] w-[46px] place-items-center rounded-full bg-red font-display text-[20px] leading-none">
-              {initials(found.name)}
-            </div>
-            <div>
-              <div className="font-display text-[24px] leading-none uppercase">{found.name}</div>
-              <div className="mt-1 text-[12px] leading-snug text-ink/60">
-                {found.members.length + 1} en línea · ya arrancaron
-              </div>
-            </div>
-          </div>
-        </div>
+      <Input
+        accessibilityLabel="Código del grupo"
+        placeholder="CÓDIGO"
+        value={code}
+        maxLength={4}
+        autoCapitalize="characters"
+        autoCorrect={false}
+        style={{ textAlign: 'center', fontSize: 32, letterSpacing: 14 }}
+        onChangeText={(s) => {
+          setFound(null);
+          setCode(
+            s
+              .toUpperCase()
+              .replace(/[^A-Z0-9]/g, '')
+              .slice(0, 4),
+          );
+        }}
+      />
+      {loading && <ActivityIndicator color={colors.lime} />}
+      {found && (
+        <Card>
+          <Kicker>Grupo encontrado</Kicker>
+          <Title style={{ fontSize: 26 }}>{found.name}</Title>
+          <Copy>{found.members.length + 1} integrantes</Copy>
+        </Card>
       )}
-
-      <div className="flex-1" />
-
-      <Button size="lg" full disabled={!found} onClick={() => found && onJoin(found)}>
+      {error ? (
+        <Copy accessibilityRole="alert" style={{ color: colors.amber }}>
+          {error}
+        </Copy>
+      ) : null}
+      <Button disabled={!found || loading || creating} onPress={() => found && onJoin(found)}>
         Unirme
       </Button>
-      <button
-        onClick={createNew}
-        className="mt-2.5 py-2 text-[13px] font-medium text-ink/60 active:text-ink"
-      >
-        Crear un grupo nuevo
-      </button>
-    </div>
+      <View style={styles.section}>
+        <Kicker>Crear un grupo</Kicker>
+        <Input
+          accessibilityLabel="Nombre del nuevo grupo"
+          value={name}
+          maxLength={40}
+          onChangeText={setName}
+        />
+        <Button variant="dark" disabled={creating || !name.trim()} onPress={() => void create()}>
+          {creating ? 'Creando…' : 'Crear grupo'}
+        </Button>
+      </View>
+      <Button compact variant="ghost" disabled={creating} onPress={onSkip}>
+        Seguir con mi registro
+      </Button>
+    </Page>
   );
 }

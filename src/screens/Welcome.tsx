@@ -1,28 +1,29 @@
-import { Button } from '../components/ui';
-
+import { View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Button, Copy, Disclaimer, Page, Title } from '../components/ui';
+import { colors } from '../components/theme';
 export function Welcome({ onStart }: { onStart: () => void }) {
   return (
-    <div className="relative flex h-full flex-col justify-end gap-5 px-7 pb-14">
-      {/* Vaso-logo */}
-      <div className="absolute top-[16%] left-7 h-[120px] w-24 rounded-t-lg rounded-b-2xl bg-gradient-to-b from-amber via-[#E8940F] to-amber-dark shadow-[0_24px_60px_rgba(255,176,32,.28)]">
-        <div className="m-1.5 h-[34px] rounded bg-white/80" />
-        <div className="mx-1.5 h-[5px] rounded-full bg-black/15" />
-      </div>
-
-      <div className="font-display text-[74px] leading-[.86] tracking-tight uppercase">
-        Tomate<span className="text-red">.</span>
-      </div>
-      <div className="max-w-[280px] text-[15px] leading-relaxed font-medium text-ink/60">
-        Foto al trago, la IA calcula cuánto alcohol es y el grupo ve quién va ganando la carrera.
-      </div>
-
-      <Button size="lg" full className="mt-2" onClick={onStart}>
-        Arrancar la noche
-      </Button>
-
-      <div className="text-center text-[11.5px] leading-snug text-ink/60">
-        Estimación orientativa. No es un test legal.
-      </div>
-    </div>
+    <Page style={{ justifyContent: 'flex-end', gap: 22 }}>
+      <View style={{ flex: 1, minHeight: 160, justifyContent: 'center' }}>
+        <LinearGradient
+          colors={[colors.amber, '#C97A06']}
+          style={{ width: 94, height: 124, borderRadius: 16, padding: 7 }}
+        >
+          <View style={{ height: 35, borderRadius: 7, backgroundColor: colors.ink }} />
+          <View
+            style={{ marginTop: 6, height: 5, backgroundColor: '#00000022', borderRadius: 5 }}
+          />
+        </LinearGradient>
+      </View>
+      <Title style={{ fontSize: 76, lineHeight: 86 }}>
+        Tomate<Title style={{ fontSize: 76, color: colors.red }}>.</Title>
+      </Title>
+      <Copy style={{ color: colors.muted, fontSize: 16, lineHeight: 25, maxWidth: 330 }}>
+        Registrá lo que tomás, conocé tus estimaciones y cuidá la vuelta con tu grupo.
+      </Copy>
+      <Button onPress={onStart}>Empezar mi registro</Button>
+      <Disclaimer />
+    </Page>
   );
 }

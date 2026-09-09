@@ -1,107 +1,287 @@
-/** Piezas visuales compartidas. Todo con Tailwind, sin librerías externas. */
+import type { ReactNode } from 'react';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  type StyleProp,
+  type TextProps,
+  type TextInputProps,
+  type ViewStyle,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Slider from '@react-native-community/slider';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
+import { colors, styles } from './theme';
 
-import { useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
-
-type Variant = 'lime' | 'amber' | 'ink' | 'dark' | 'ghost' | 'danger';
-
-const VARIANTS: Record<Variant, string> = {
-  lime: 'bg-lime text-night active:bg-lime-dark',
-  amber: 'bg-amber text-night active:bg-amber-dark',
-  ink: 'bg-ink text-night active:bg-white/80',
-  dark: 'bg-surface text-ink border border-white/12 active:bg-surface-2',
-  ghost: 'bg-transparent text-ink/60 active:text-ink',
-  danger: 'bg-red text-ink active:bg-red-dark',
-};
-
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: Variant;
-  full?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+export function Copy({ style, ...props }: TextProps) {
+  return (
+    <Text
+      {...props}
+      style={[
+        { fontFamily: 'SpaceGrotesk', color: colors.ink, fontSize: 14, lineHeight: 21 },
+        style,
+      ]}
+    />
+  );
 }
-
+export function Title({ style, ...props }: TextProps) {
+  return (
+    <Text
+      accessibilityRole="header"
+      {...props}
+      style={[
+        {
+          fontFamily: 'Anton',
+          color: colors.ink,
+          fontSize: 38,
+          lineHeight: 46,
+          textTransform: 'uppercase',
+        },
+        style,
+      ]}
+    />
+  );
+}
+export function Kicker({
+  children,
+  color = colors.muted,
+}: {
+  children: ReactNode;
+  color?: string;
+}) {
+  return (
+    <Copy style={{ color, fontSize: 11, letterSpacing: 1.8, textTransform: 'uppercase' }}>
+      {children}
+    </Copy>
+  );
+}
 export function Button({
+  children,
+  onPress,
   variant = 'lime',
-  full,
-  size = 'md',
-  className = '',
-  children,
-  ...rest
-}: ButtonProps) {
-  const sizes = {
-    sm: 'px-4 py-2.5 text-[13px] font-sans font-medium tracking-wide',
-    md: 'px-5 py-4 text-[17px] font-display uppercase tracking-wide',
-    lg: 'px-6 py-[19px] text-[21px] font-display uppercase tracking-wide',
-  }[size];
-
+  disabled,
+  compact,
+  style,
+  accessibilityLabel,
+}: {
+  children: ReactNode;
+  onPress: () => void;
+  variant?: 'lime' | 'amber' | 'dark' | 'ghost' | 'danger' | 'ink';
+  disabled?: boolean;
+  compact?: boolean;
+  style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
+}) {
+  const bg = {
+    lime: colors.lime,
+    amber: colors.amber,
+    dark: colors.surface,
+    ghost: 'transparent',
+    danger: colors.red,
+    ink: colors.ink,
+  }[variant];
+  const fg = ['lime', 'amber', 'ink'].includes(variant) ? colors.night : colors.ink;
   return (
-    <button
-      className={`rounded-full border-0 transition-transform duration-100 active:scale-[.98] disabled:opacity-40 ${
-        full ? 'w-full' : ''
-      } ${VARIANTS[variant]} ${sizes} ${className}`}
-      {...rest}
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled: !!disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [
+        {
+          backgroundColor: bg,
+          borderRadius: 30,
+          minHeight: 46,
+          paddingVertical: compact ? 11 : 16,
+          paddingHorizontal: compact ? 16 : 22,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderColor: variant === 'dark' ? colors.line : 'transparent',
+          borderWidth: 1,
+          opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
+        },
+        style,
+      ]}
     >
-      {children}
-    </button>
+      <Text
+        style={{
+          color: fg,
+          fontFamily: compact ? 'SpaceGrotesk' : 'Anton',
+          fontSize: compact ? 13 : 20,
+          textAlign: 'center',
+        }}
+      >
+        {children}
+      </Text>
+    </Pressable>
   );
 }
-
-export function Card({
-  children,
-  className = '',
-  ...rest
-}: { children: ReactNode; className?: string } & React.HTMLAttributes<HTMLDivElement>) {
+export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
   return (
-    <div
-      className={`rounded-2xl border border-white/8 bg-surface ${className}`}
-      {...rest}
+    <View
+      style={[
+        {
+          padding: 16,
+          backgroundColor: colors.surface,
+          borderWidth: 1,
+          borderColor: colors.line,
+          borderRadius: 18,
+          gap: 10,
+        },
+        style,
+      ]}
     >
       {children}
-    </div>
+    </View>
   );
 }
-
 export function Stat({
   value,
   label,
-  color,
-  className = '',
+  color = colors.ink,
 }: {
   value: ReactNode;
   label: string;
   color?: string;
-  className?: string;
 }) {
   return (
-    <div className={`flex-1 rounded-[14px] border border-white/8 bg-surface p-3 ${className}`}>
-      <div className="font-display text-[26px] leading-none tabular" style={{ color }}>
-        {value}
-      </div>
-      <div className="mt-1.5 text-[10px] leading-none font-medium tracking-[.12em] text-ink/60">
-        {label}
-      </div>
-    </div>
+    <Card style={{ flex: 1, minWidth: 0, padding: 12, alignSelf: 'stretch' }}>
+      <Title style={{ fontSize: 27, lineHeight: 34, color }}>{value}</Title>
+      <Kicker>{label}</Kicker>
+    </Card>
   );
 }
-
-export function Kicker({ children, color }: { children: ReactNode; color?: string }) {
+export function Page({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
   return (
-    <div
-      className="text-[11px] leading-none font-medium tracking-[.2em] uppercase text-ink/60"
-      style={color ? { color } : undefined}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.fill}
     >
-      {children}
-    </div>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[{ padding: 22, paddingBottom: 32, flexGrow: 1 }, style]}
+      >
+        {children}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
-
-export function Title({ children, className = '' }: { children: ReactNode; className?: string }) {
+export function Input({ style, ...props }: TextInputProps) {
   return (
-    <h1 className={`font-display uppercase leading-none ${className}`}>{children}</h1>
+    <TextInput
+      placeholderTextColor={colors.muted}
+      selectionColor={colors.lime}
+      {...props}
+      style={[
+        {
+          borderWidth: 1,
+          borderColor: colors.line,
+          backgroundColor: colors.surface,
+          borderRadius: 14,
+          padding: 15,
+          color: colors.ink,
+          fontFamily: 'SpaceGrotesk',
+          fontSize: 17,
+          minHeight: 52,
+        },
+        style,
+      ]}
+    />
   );
 }
-
-/** Hoja que sube desde abajo (elegir vaso, corregir medida…). */
+export function Chip({
+  active,
+  children,
+  onPress,
+}: {
+  active?: boolean;
+  children: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: !!active }}
+      style={({ pressed }) => ({
+        minHeight: 44,
+        paddingHorizontal: 15,
+        paddingVertical: 12,
+        borderRadius: 24,
+        backgroundColor: active ? colors.ink : colors.surface,
+        borderWidth: 1,
+        borderColor: colors.line,
+        opacity: pressed ? 0.6 : 1,
+      })}
+    >
+      <Copy style={{ color: active ? colors.night : colors.ink, fontSize: 12 }}>{children}</Copy>
+    </Pressable>
+  );
+}
+export function NumberPicker({
+  value,
+  min,
+  max,
+  step = 1,
+  label,
+  onChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  label: string;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <View style={{ gap: 8 }}>
+      <View style={styles.between}>
+        <Kicker>{label}</Kicker>
+        <Title style={{ color: colors.lime, fontSize: 32 }}>{value.toLocaleString('es-AR')}</Title>
+      </View>
+      <View style={styles.row}>
+        <Button
+          compact
+          variant="dark"
+          accessibilityLabel={`Disminuir ${label}`}
+          disabled={value <= min}
+          onPress={() => onChange(Math.max(min, value - step))}
+        >
+          −
+        </Button>
+        <Slider
+          style={{ flex: 1, height: 44 }}
+          minimumValue={min}
+          maximumValue={max}
+          step={step}
+          value={value}
+          onValueChange={onChange}
+          minimumTrackTintColor={colors.lime}
+          maximumTrackTintColor={colors.line}
+          thumbTintColor={colors.lime}
+          accessibilityLabel={label}
+        />
+        <Button
+          compact
+          variant="dark"
+          accessibilityLabel={`Aumentar ${label}`}
+          disabled={value >= max}
+          onPress={() => onChange(Math.min(max, value + step))}
+        >
+          +
+        </Button>
+      </View>
+    </View>
+  );
+}
 export function Sheet({
   open,
   onClose,
@@ -113,146 +293,116 @@ export function Sheet({
   title: string;
   children: ReactNode;
 }) {
-  const [host, setHost] = useState<HTMLElement | null>(null);
-
-  useEffect(() => {
-    setHost(document.getElementById('tmt-overlay'));
-  }, []);
-
-  if (!open || !host) return null;
-
-  return createPortal(
-    <div className="pointer-events-auto absolute inset-0 flex flex-col justify-end">
-      <button
-        aria-label="Cerrar"
-        className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
-        onClick={onClose}
-      />
-      <div
-        className="relative max-h-[86%] overflow-y-auto no-scrollbar rounded-t-[26px] border-t border-white/12 bg-[#121110] pb-8"
-        style={{ animation: 'var(--animate-sheet)' }}
-      >
-        <div className="sticky top-0 z-10 bg-[#121110] px-5 pt-4 pb-3">
-          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-[24px] leading-none uppercase">{title}</h2>
-            <button
-              onClick={onClose}
-              className="rounded-full border border-white/12 px-3 py-1.5 text-[11px] font-medium tracking-wider text-ink/60"
+  const insets = useSafeAreaInsets();
+  return (
+    <Modal
+      visible={open}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+      statusBarTranslucent
+    >
+      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: '#00000099' }}>
+        <Pressable
+          accessibilityLabel="Cerrar"
+          accessibilityRole="button"
+          onPress={onClose}
+          style={StyleSheet.absoluteFill}
+        />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={{ height: '90%' }}
+        >
+          <View
+            accessibilityViewIsModal
+            style={{
+              flex: 1,
+              backgroundColor: colors.night,
+              borderTopLeftRadius: 26,
+              borderTopRightRadius: 26,
+              paddingBottom: insets.bottom,
+            }}
+          >
+            <View style={[styles.between, { padding: 20 }]}>
+              <Title style={{ flex: 1, fontSize: 25, lineHeight: 32 }}>{title}</Title>
+              <Button compact variant="dark" onPress={onClose}>
+                Cerrar
+              </Button>
+            </View>
+            <ScrollView
+              style={{ flex: 1 }}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ padding: 20, paddingTop: 0, gap: 12 }}
             >
-              CERRAR
-            </button>
-          </div>
-        </div>
-        {children}
-      </div>
-    </div>,
-    host,
+              {children}
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+    </Modal>
   );
 }
-
-export function Divider({ className = '' }: { className?: string }) {
-  return <div className={`h-px w-full bg-white/10 ${className}`} />;
-}
-
-/* ── Iconos ──────────────────────────────────────────────────── */
-
-export function CameraIcon({ size = 22, className = '' }: { size?: number; className?: string }) {
+export function Disclaimer() {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-      <path
-        d="M3 8.5A2.5 2.5 0 0 1 5.5 6h1.7l1-1.7A1.5 1.5 0 0 1 9.5 3.5h5a1.5 1.5 0 0 1 1.3.8l1 1.7h1.7A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-9Z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
+    <Copy style={[styles.small, { marginTop: 18, textAlign: 'center' }]}>
+      Estimación orientativa, no una medición ni un consejo médico. No permite decidir si podés
+      manejar. Si tomaste, no manejes.
+    </Copy>
+  );
+}
+export function GlassIcon({ kind, size = 44 }: { kind: string; size?: number }) {
+  const fill =
+    (
+      {
+        cerveza: colors.amber,
+        trago: colors.red,
+        vino: colors.violet,
+        shot: colors.lime,
+      } as Record<string, string>
+    )[kind] ?? colors.sky;
+  return (
+    <Svg width={size * 0.72} height={size} viewBox="0 0 32 44">
+      {kind === 'vino' || kind === 'espumante' ? (
+        <>
+          <Path d="M7 4h18l-2 14a7 7 0 0 1-14 0L7 4Z" fill="#ffffff18" stroke="#ffffff66" />
+          <Path d="M8.6 10h14.8l-1.3 8a7 7 0 0 1-12.2 0L8.6 10Z" fill={fill} />
+          <Path d="M16 25v13M11 39h10" stroke="#ffffff66" strokeWidth={1.6} />
+        </>
+      ) : (
+        <>
+          <Rect
+            x={6}
+            y={kind === 'shot' ? 16 : 4}
+            width={20}
+            height={kind === 'shot' ? 24 : 36}
+            rx={4}
+            fill="#ffffff18"
+            stroke="#ffffff66"
+          />
+          <Rect
+            x={8}
+            y={kind === 'shot' ? 25 : 15}
+            width={16}
+            height={kind === 'shot' ? 13 : 23}
+            rx={3}
+            fill={fill}
+          />
+          <Rect x={8} y={kind === 'shot' ? 25 : 15} width={16} height={4} rx={2} fill="#ffffff88" />
+        </>
+      )}
+    </Svg>
+  );
+}
+export function CameraIcon({ size = 24, color = colors.night }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M3 8a2 2 0 0 1 2-2h3l1-2h6l1 2h3a2 2 0 0 1 2 2v11H3V8Z"
+        stroke={color}
+        strokeWidth={2}
       />
-      <circle cx="12" cy="13" r="3.6" stroke="currentColor" strokeWidth="2" />
-    </svg>
+      <Circle cx={12} cy={12.5} r={3.5} stroke={color} strokeWidth={2} />
+    </Svg>
   );
 }
-
-export function PlusIcon({ size = 22, className = '' }: { size?: number; className?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-export function CheckIcon({ size = 18, className = '' }: { size?: number; className?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-      <path
-        d="m5 12.5 4.5 4.5L19 7"
-        stroke="currentColor"
-        strokeWidth="2.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-export function BackIcon({ size = 18, className = '' }: { size?: number; className?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}>
-      <path
-        d="M14 5l-7 7 7 7"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-/** Vasito dibujado: cambia de forma según el tipo de bebida. */
-export function GlassIcon({
-  kind,
-  size = 44,
-  className = '',
-}: {
-  kind: string;
-  size?: number;
-  className?: string;
-}) {
-  const h = size;
-  const w = size * 0.72;
-  const fills: Record<string, string> = {
-    cerveza: '#FFB020',
-    trago: '#E8402A',
-    vino: '#9B7BFF',
-    shot: '#C6F24E',
-    espumante: '#5AC8FA',
-    sidra: '#5AC8FA',
-  };
-  const fill = fills[kind] ?? '#FFB020';
-
-  if (kind === 'vino' || kind === 'espumante') {
-    return (
-      <svg width={w} height={h} viewBox="0 0 32 44" className={className}>
-        <path d="M7 4h18l-2 14a7 7 0 0 1-14 0L7 4Z" fill="rgba(250,247,242,.08)" stroke="rgba(250,247,242,.3)" />
-        <path d="M8.6 10h14.8l-1.3 8a7 7 0 0 1-12.2 0L8.6 10Z" fill={fill} opacity=".9" />
-        <path d="M16 25v13M11 39h10" stroke="rgba(250,247,242,.35)" strokeWidth="1.6" strokeLinecap="round" />
-      </svg>
-    );
-  }
-
-  if (kind === 'shot') {
-    return (
-      <svg width={w} height={h} viewBox="0 0 32 44" className={className}>
-        <path d="M9 16h14l-1.6 20a3 3 0 0 1-3 2.6h-4.8a3 3 0 0 1-3-2.6L9 16Z" fill="rgba(250,247,242,.08)" stroke="rgba(250,247,242,.3)" />
-        <path d="M10.2 24h11.6l-1 12a3 3 0 0 1-3 2.6h-3.6a3 3 0 0 1-3-2.6l-1-12Z" fill={fill} opacity=".9" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg width={w} height={h} viewBox="0 0 32 44" className={className}>
-      <rect x="6" y="4" width="20" height="36" rx="4" fill="rgba(250,247,242,.07)" stroke="rgba(250,247,242,.28)" />
-      <rect x="8" y="15" width="16" height="23" rx="3" fill={fill} opacity=".9" />
-      <rect x="8" y="15" width="16" height="4" rx="2" fill="rgba(255,255,255,.55)" />
-    </svg>
-  );
-}
+export { SafeAreaView };

@@ -1,16 +1,16 @@
-node_modules
-dist
-dist-ssr
-.vite
+node_modules/
+dist/
+.expo/
 *.tsbuildinfo
 *.local
 .DS_Store
 .env
-.env.local
-
-# Proyectos nativos generados por Capacitor
-ios
-android
-
-# Config local de herramientas
-.claude
+.env.*
+!.env.example
+# Generados por Expo (Continuous Native Generation)
+ios/
+android/
+.claude/
+credentials.json
+*.p12
+*.mobileprovision

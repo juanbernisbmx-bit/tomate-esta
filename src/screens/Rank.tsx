@@ -1,200 +1,148 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Kicker } from '../components/ui';
-import { pollGroup } from '../api/client';
-import { LINE_REFERENCE, bacFromGrams, pacePerHour } from '../lib/alcohol';
-import { fmtAgo, fmtBac, fmtNum } from '../lib/format';
+import { useEffect, useRef, useState } from 'react';
+import { AppState, Share, View } from 'react-native';
+import { Button, Card, Chip, Copy, Disclaimer, Kicker, Page, Stat, Title } from '../components/ui';
+import { colors, styles } from '../components/theme';
+import { pollGroup, USING_MOCKS } from '../api/client';
+import { fmtAgo, fmtBac, plural } from '../lib/format';
 import { useActions, useApp } from '../state/store';
-import { useLeaderboard, type Row } from '../state/selectors';
-
-type Modo = 'ahora' | 'pico' | 'tragos';
-
-const MODOS: Array<{ id: Modo; label: string }> = [
-  { id: 'ahora', label: 'Ahora' },
-  { id: 'pico', label: 'Pico' },
-  { id: 'tragos', label: 'Tragos' },
-];
-
+import { useGroupStats } from '../state/selectors';
 export function Rank() {
-  const { group, profile, tragos } = useApp();
-  const { setGroup } = useActions();
-  const { rows, promedio, totalTragos, now } = useLeaderboard();
-  const [modo, setModo] = useState<Modo>('ahora');
-
-  // Mientras mirás la tabla, el grupo se actualiza solo.
+  const { group } = useApp();
+  const { setGroup, go, showToast } = useActions();
+  const { rows, totalTragos, now } = useGroupStats();
+  const [mode, setMode] = useState<'ahora' | 'tragos'>('ahora');
+  const [error, setError] = useState('');
+  const [updated, setUpdated] = useState<number | null>(null);
+  const current = useRef(group);
+  current.current = group;
   useEffect(() => {
-    if (!group) return;
-    const id = setInterval(async () => setGroup(await pollGroup(group)), 45_000);
-    return () => clearInterval(id);
-  }, [group, setGroup]);
-
-  const misGramos = tragos.reduce((a, t) => a + t.grams, 0);
-  const miPico = bacFromGrams(misGramos, profile.peso, profile.sexo);
-
-  const ordered = useMemo(() => {
-    const withValue = rows.map((r) => ({
-      row: r,
-      valor:
-        modo === 'ahora'
-          ? r.bac
-          : modo === 'tragos'
-            ? r.tragos
-            : r.me
-              ? miPico
-              : bacFromGrams(
-                  group?.members.find((m) => m.id === r.id)?.grams ?? 0,
-                  group?.members.find((m) => m.id === r.id)?.peso ?? 75,
-                  group?.members.find((m) => m.id === r.id)?.sexo ?? 'H',
-                ),
-    }));
-    return withValue.sort((a, b) => b.valor - a.valor);
-  }, [rows, modo, group, miPico]);
-
-  const max = Math.max(...ordered.map((o) => o.valor), modo === 'tragos' ? 4 : LINE_REFERENCE);
-  const ritmo = pacePerHour(tragos, profile, now);
-
+    if (!group || USING_MOCKS) return;
+    let cancelled = false;
+    let busy = false;
+    const refresh = async () => {
+      if (busy || AppState.currentState !== 'active' || !current.current) return;
+      busy = true;
+      const code = current.current.code;
+      try {
+        const result = await pollGroup(current.current);
+        if (!cancelled && current.current?.code === code) {
+          setGroup(result);
+          setError('');
+          setUpdated(Date.now());
+        }
+      } catch {
+        if (!cancelled) setError('Sin conexión al grupo. Mostramos los últimos datos recibidos.');
+      } finally {
+        busy = false;
+      }
+    };
+    void refresh();
+    const id = setInterval(() => void refresh(), 45000);
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') void refresh();
+    });
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+      sub.remove();
+    };
+  }, [group?.code, setGroup]);
+  if (!group)
+    return (
+      <Page style={{ gap: 20 }}>
+        <Title>Tu grupo</Title>
+        <Copy>
+          Tu registro personal está disponible. Podés unirte a un grupo para acompañarse durante la
+          noche.
+        </Copy>
+        <Button onPress={() => go('group')}>Unirme o crear grupo</Button>
+        <Disclaimer />
+      </Page>
+    );
   return (
-    <div className="relative h-full overflow-y-auto no-scrollbar px-5 pt-16 pb-[130px]">
-      <div className="flex items-baseline justify-between">
-        <div className="font-display text-[34px] leading-none uppercase">La carrera</div>
-        <div className="flex items-center gap-1.5 text-[11px] leading-none font-medium tracking-[.16em] text-lime">
-          <span
-            className="h-[7px] w-[7px] rounded-full bg-lime"
-            style={{ animation: 'var(--animate-pulse-soft)' }}
-          />
-          EN VIVO
-        </div>
-      </div>
-      <div className="mt-1.5 mb-3.5 text-[12.5px] leading-relaxed text-ink/60">
-        {group?.name ?? 'Sin grupo'} · de 0 a la línea de {fmtNum(LINE_REFERENCE, 1)} ‰
-      </div>
-
-      <div className="mb-4 flex gap-1.5">
-        {MODOS.map((m) => (
-          <button
-            key={m.id}
-            onClick={() => setModo(m.id)}
-            className={`rounded-full px-3.5 py-2 font-display text-[14px] leading-none uppercase transition-colors ${
-              modo === m.id
-                ? 'bg-ink text-night'
-                : 'border border-white/14 bg-surface text-ink/70'
-            }`}
-          >
-            {m.label}
-          </button>
+    <Page>
+      <Kicker color={colors.amber}>Acompañarse, sin competir</Kicker>
+      <Title>El grupo</Title>
+      <Copy style={{ color: colors.muted }}>
+        {group.name} · código {group.code}
+      </Copy>
+      <Copy style={styles.small}>Tus registros se guardan en este dispositivo.</Copy>
+      <Copy style={[styles.small, { marginTop: 12 }]}>
+        {USING_MOCKS
+          ? 'Demo · personas y registros de ejemplo'
+          : updated
+            ? `Actualizado ${fmtAgo(updated, now)} · cada 45 s`
+            : 'Consultando el grupo…'}
+      </Copy>
+      {error ? (
+        <Copy accessibilityRole="alert" style={{ color: colors.amber }}>
+          {error}
+        </Copy>
+      ) : null}
+      <View style={[styles.row, { marginVertical: 18 }]}>
+        <Chip active={mode === 'ahora'} onPress={() => setMode('ahora')}>
+          Estimación actual
+        </Chip>
+        <Chip active={mode === 'tragos'} onPress={() => setMode('tragos')}>
+          Registros
+        </Chip>
+      </View>
+      <View style={styles.stack}>
+        {rows.map((row) => (
+          <Card key={row.id} style={row.me ? styles.selected : undefined}>
+            <View style={styles.between}>
+              <View style={styles.fill}>
+                <Title
+                  style={{ fontSize: 24, lineHeight: 32, color: row.me ? colors.lime : colors.ink }}
+                >
+                  {row.name}
+                  {row.me && row.name !== 'Vos' ? ' · vos' : ''}
+                </Title>
+                <Copy style={styles.small}>
+                  {row.lastAt ? fmtAgo(row.lastAt, now) : 'Sin registros'}
+                </Copy>
+              </View>
+              <Title style={{ fontSize: 28, color: row.me ? colors.lime : colors.ink }}>
+                {mode === 'tragos' ? row.tragos : `${fmtBac(row.bac)} ‰`}
+              </Title>
+            </View>
+            <Copy style={styles.small}>
+              {row.lastLabel} · {plural(row.tragos, 'registro')}
+            </Copy>
+          </Card>
         ))}
-      </div>
-
-      <div className="flex flex-col gap-3">
-        {ordered.map(({ row, valor }, i) => (
-          <RankRow
-            key={row.id}
-            row={row}
-            pos={i + 1}
-            valor={valor}
-            max={max}
-            modo={modo}
-            now={now}
-          />
-        ))}
-      </div>
-
-      <div className="mt-5 flex gap-2.5 border-t border-white/10 pt-3.5">
-        <Foot value={`+${fmtBac(ritmo)}`} label="TU RITMO / H" color="#FFB020" />
-        <Foot value={fmtBac(promedio)} label="PROMEDIO ‰" />
-        <Foot value={totalTragos} label="TRAGOS GRUPO" />
-      </div>
-
-      <div className="mt-5 text-center text-[11.5px] leading-snug text-ink/50">
-        Los números son estimaciones. El que maneja, no toma.
-      </div>
-    </div>
-  );
-}
-
-function RankRow({
-  row,
-  pos,
-  valor,
-  max,
-  modo,
-  now,
-}: {
-  row: Row;
-  pos: number;
-  valor: number;
-  max: number;
-  modo: Modo;
-  now: number;
-}) {
-  const width = `${Math.min(100, Math.round((valor / max) * 100))}%`;
-  const fill = row.me
-    ? '#C6F24E'
-    : pos === 1
-      ? 'linear-gradient(90deg,#FFB020,#E8402A)'
-      : 'linear-gradient(90deg,#5a5138,#c8a13a)';
-
-  return (
-    <div
-      className={`rounded-[14px] border px-3.5 ${row.me ? 'border-lime/32 bg-lime/8 py-3.5' : 'border-white/8 bg-surface py-3'}`}
-    >
-      <div className="mb-1.5 flex items-baseline gap-2.5">
-        <span
-          className="w-4 font-display text-[15px] leading-none"
-          style={{ color: pos === 1 ? '#FFB020' : 'rgba(250,247,242,.62)' }}
+      </View>
+      <View style={[styles.row, { marginTop: 18 }]}>
+        <Stat value={rows.length} label="Personas" />
+        <Stat value={totalTragos} label="Registros del grupo" />
+      </View>
+      <Card style={{ marginTop: 18 }}>
+        <Kicker>La vuelta</Kicker>
+        <Copy>
+          Acuerden cómo vuelven y acompañen a quien necesite ayuda. Las estimaciones pueden diferir
+          mucho de los valores reales.
+        </Copy>
+      </Card>
+      <View style={styles.section}>
+        <Button
+          variant="dark"
+          onPress={async () => {
+            try {
+              await Share.share({
+                message: `Sumate a ${group.name} en Tomate con el código ${group.code}.`,
+              });
+            } catch {
+              showToast('No se pudo abrir el menú para compartir.');
+            }
+          }}
         >
-          {pos}
-        </span>
-        <span
-          className="flex-1 font-display text-[19px] leading-none uppercase"
-          style={{ color: row.me ? '#C6F24E' : '#FAF7F2' }}
-        >
-          {row.name}
-        </span>
-        <span className="text-[10.5px] leading-none font-medium whitespace-nowrap text-ink/60">
-          {row.lastAt ? fmtAgo(row.lastAt, now) : '—'}
-        </span>
-        <span
-          className="font-display text-[22px] leading-none tabular"
-          style={{ color: row.me ? '#C6F24E' : pos === 1 ? '#FFB020' : '#FAF7F2' }}
-        >
-          {modo === 'tragos' ? valor : fmtBac(valor)}
-        </span>
-      </div>
-
-      <div className="relative h-5 overflow-hidden rounded-md bg-[#171512]">
-        <div
-          className="absolute inset-y-0 left-0 rounded-md transition-[width] duration-500"
-          style={{ width, background: fill }}
-        />
-        {modo !== 'tragos' && (
-          <div className="absolute inset-y-0 left-[80%] w-px bg-white/25" />
-        )}
-      </div>
-
-      <div className="mt-1.5 flex justify-between text-[11px] leading-snug text-ink/60">
-        <span className="truncate">
-          {row.lastLabel} · {row.tragos} {row.tragos === 1 ? 'trago' : 'tragos'}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function Foot({
-  value,
-  label,
-  color,
-}: {
-  value: React.ReactNode;
-  label: string;
-  color?: string;
-}) {
-  return (
-    <div className="flex-1">
-      <div className="font-display text-[24px] leading-none tabular" style={{ color }}>
-        {value}
-      </div>
-      <Kicker>{label}</Kicker>
-    </div>
+          Compartir código
+        </Button>
+        <Button compact variant="ghost" onPress={() => go('group')}>
+          Cambiar de grupo
+        </Button>
+      </View>
+      <Disclaimer />
+    </Page>
   );
 }

@@ -1,47 +1,62 @@
 import { useEffect } from 'react';
-
-/** Aviso corto con "deshacer" para el trago recién sumado. */
+import { View } from 'react-native';
+import { Button, Copy } from './ui';
+import { colors, styles } from './theme';
 export function Toast({
   toast,
   onUndo,
   onClose,
-  offset = 'bottom-[104px]',
+  offset = 80,
 }: {
-  toast: { id: string; text: string; undoId?: string } | null;
+  toast: { id: string; text: string; undoId?: string; hint?: string } | null;
   onUndo: (id: string) => void;
   onClose: () => void;
-  offset?: string;
+  offset?: number;
 }) {
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(onClose, 3800);
-    return () => clearTimeout(t);
+    const id = setTimeout(onClose, 6000);
+    return () => clearTimeout(id);
   }, [toast, onClose]);
-
   if (!toast) return null;
-
   return (
-    <div
-      key={toast.id}
-      className={`pointer-events-none absolute inset-x-4 ${offset} z-[45] flex justify-center`}
+    <View
+      accessibilityLiveRegion="polite"
+      style={[
+        styles.row,
+        {
+          position: 'absolute',
+          bottom: offset,
+          left: 14,
+          right: 14,
+          backgroundColor: colors.surface2,
+          borderColor: colors.line,
+          borderWidth: 1,
+          borderRadius: 22,
+          padding: 14,
+        },
+      ]}
     >
-      <div
-        className="pointer-events-auto flex items-center gap-3 rounded-full border border-white/12 bg-[#1b1815]/95 py-2.5 pr-2.5 pl-4 shadow-[0_10px_30px_rgba(0,0,0,.5)] backdrop-blur"
-        style={{ animation: 'var(--animate-pop)' }}
-      >
-        <span className="text-[13px] leading-tight text-ink/85">{toast.text}</span>
-        {toast.undoId && (
-          <button
-            onClick={() => {
-              onUndo(toast.undoId!);
-              onClose();
-            }}
-            className="flex-none rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-semibold tracking-wider text-ink"
-          >
-            DESHACER
-          </button>
-        )}
-      </div>
-    </div>
+      <View style={styles.fill}>
+        <Copy style={{ fontSize: 12 }}>{toast.text}</Copy>
+        {toast.hint && <Copy style={{ fontSize: 11, color: colors.amber }}>{toast.hint}</Copy>}
+      </View>
+      {toast.undoId ? (
+        <Button
+          compact
+          variant="dark"
+          onPress={() => {
+            onUndo(toast.undoId!);
+            onClose();
+          }}
+        >
+          Deshacer
+        </Button>
+      ) : (
+        <Button compact variant="ghost" accessibilityLabel="Cerrar aviso" onPress={onClose}>
+          ×
+        </Button>
+      )}
+    </View>
   );
 }

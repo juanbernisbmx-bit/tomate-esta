@@ -48,11 +48,11 @@ export function buildRows(
     me: false,
   }));
 
-  return [...others, me].sort((a, b) => b.bac - a.bac);
+  return [me, ...others.sort((a, b) => a.name.localeCompare(b.name, 'es'))];
 }
 
-/** Tabla del grupo + mi posición, recalculadas con el reloj vivo. */
-export function useLeaderboard() {
+/** Registro del grupo, recalculadas con el reloj vivo. */
+export function useGroupStats() {
   const { group, profile, tragos } = useApp();
   const tick = useNow(15_000);
 
@@ -64,10 +64,17 @@ export function useLeaderboard() {
     const myIndex = rows.findIndex((r) => r.me);
     const mine = rows[myIndex];
     const mio = bacBreakdown(tragos, profile, now);
+
+    // Hora de inicio de la previa: el primer vaso escaneado/cargado de TODO
+    // el grupo, no solo el mío (mi primer trago vs. el startedAt de cada uno).
+    const starts = [tragos[0]?.at, ...(group?.members ?? []).map((m) => m.startedAt)].filter(
+      (t): t is number => typeof t === 'number' && t > 0,
+    );
+    const previaDesde = starts.length ? Math.min(...starts) : null;
+
     return {
       now,
       rows,
-      puesto: myIndex + 1,
       total: rows.length,
       bac: mine?.bac ?? 0,
       /** Lo que todavía está subiendo (recién tomado). */
@@ -75,6 +82,8 @@ export function useLeaderboard() {
       pico: mio.peak,
       promedio: rows.length ? rows.reduce((a, r) => a + r.bac, 0) / rows.length : 0,
       totalTragos: rows.reduce((a, r) => a + r.tragos, 0),
+      /** Cuándo arrancó la previa del grupo (primer vaso de cualquiera). */
+      previaDesde,
     };
   }, [group, profile, tragos, tick]);
 }

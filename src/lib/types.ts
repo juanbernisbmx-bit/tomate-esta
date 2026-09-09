@@ -78,15 +78,7 @@ export interface Group {
 }
 
 export type Screen =
-  | 'welcome'
-  | 'onboarding'
-  | 'group'
-  | 'home'
-  | 'scan'
-  | 'result'
-  | 'rank'
-  | 'profile'
-  | 'recap';
+  'welcome' | 'onboarding' | 'group' | 'home' | 'scan' | 'rank' | 'profile' | 'recap';
 
 /** Resultado que devuelve la IA al analizar la foto del vaso. */
 export interface ScanResult {

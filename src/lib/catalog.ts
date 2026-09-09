@@ -86,7 +86,7 @@ export const PRESETS: Preset[] = [
     kind: 'cerveza',
     abv: 5,
     source: 'preset',
-    hint: 'Litro compartido, pero contado entero',
+    hint: 'Registrá solo el volumen que tomaste vos',
     featured: true,
   },
   {
@@ -106,7 +106,7 @@ export const PRESETS: Preset[] = [
     kind: 'shot',
     abv: 40,
     source: 'preset',
-    hint: 'Chupito al hueso',
+    hint: 'Medida de 45 ml',
     featured: true,
   },
   {
@@ -143,7 +143,7 @@ export const PRESETS: Preset[] = [
     kind: 'cerveza',
     abv: 6.5,
     source: 'preset',
-    hint: 'Artesanal, pega más',
+    hint: 'Verificá la graduación en la etiqueta',
   },
   {
     id: 'fernet-largo',

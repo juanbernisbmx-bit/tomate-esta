@@ -1,7 +1,7 @@
 /**
  * Cálculo de alcohol en sangre (Widmark simplificado).
  *
- * Todo lo de acá es una ESTIMACIÓN para jugar entre amigos: no reemplaza
+ * Todo lo de acá es una ESTIMACIÓN orientativa: no reemplaza
  * un alcoholímetro ni sirve como prueba legal. Se documenta el modelo para
  * que el back pueda replicar exactamente los mismos números.
  */
@@ -131,7 +131,8 @@ export interface Level {
   range: string;
   sub: string;
   color: string;
-  gradient: string;
+  /** Par que consume LinearGradient; RN no entiende cadenas CSS. */
+  gradient: readonly [string, string];
   /** Techo del tramo, para dibujar el progreso. */
   max: number;
 }
@@ -139,38 +140,38 @@ export interface Level {
 export const LEVELS: Level[] = [
   {
     key: 'fresco',
-    name: 'Fresco',
+    name: 'Tu registro',
     range: '0 – 0,3',
-    sub: 'Recién arrancás. La noche es larga.',
+    sub: 'Llevá tu registro y planificá la vuelta.',
     color: '#C6F24E',
-    gradient: 'linear-gradient(120deg,#C6F24E,#8fc41a)',
+    gradient: ['#C6F24E', '#91BB33'],
     max: 0.3,
   },
   {
     key: 'piola',
-    name: 'Piola',
+    name: 'Hacé una pausa',
     range: '0,3 – 0,5',
-    sub: 'Punto justo: hablás bien y bailás mejor.',
+    sub: 'Alterná con agua. Si tomaste, no manejes.',
     color: '#C6F24E',
-    gradient: 'linear-gradient(120deg,#C6F24E,#8fc41a)',
+    gradient: ['#C6F24E', '#91BB33'],
     max: 0.5,
   },
   {
     key: 'llamas',
-    name: 'En llamas',
+    name: 'Cuidate',
     range: '0,5 – 0,8',
-    sub: 'Estás jugando el partido. Alterná con agua.',
+    sub: 'Evitá seguir tomando y buscá compañía.',
     color: '#FFB020',
-    gradient: 'linear-gradient(120deg,#FFB020,#E8402A)',
+    gradient: ['#FFB020', '#B85724'],
     max: 0.8,
   },
   {
     key: 'bajar',
     name: 'Bajá un cambio',
     range: '0,8 +',
-    sub: 'Agua, algo salado y nada de manejar.',
+    sub: 'Dejá de tomar. Pedí apoyo y no manejes.',
     color: '#E8402A',
-    gradient: 'linear-gradient(120deg,#E8402A,#a82415)',
+    gradient: ['#E8402A', '#B85724'],
     max: 99,
   },
 ];
@@ -179,7 +180,7 @@ export function levelOf(bac: number): Level {
   return LEVELS.find((l) => bac < l.max) ?? LEVELS[LEVELS.length - 1];
 }
 
-/** Equivalencia en "tragos estándar" (14 g de alcohol puro, criterio OMS/NIAAA). */
+/** Equivalencia en "tragos estándar" (14 g de alcohol puro, convención estadounidense NIAAA). */
 export const STANDARD_DRINK_G = 14;
 
 export function standardDrinks(grams: number): number {
