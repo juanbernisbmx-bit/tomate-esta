@@ -1,7 +1,7 @@
 /** Cálculos derivados que usan varias pantallas. */
 
 import { useMemo } from 'react';
-import { bacAt, bacBreakdown, bacOfMember } from '../lib/alcohol';
+import { bacAt, bacBreakdown, bacOfMember, pacePerHour } from '../lib/alcohol';
 import type { Group, Profile, Trago } from '../lib/types';
 import { useApp, useNow } from './store';
 
@@ -81,6 +81,8 @@ export function useGroupStats() {
       subiendo: mio.pending,
       pico: mio.peak,
       promedio: rows.length ? rows.reduce((a, r) => a + r.bac, 0) / rows.length : 0,
+      /** Tu ritmo de las últimas 2 horas, para leer si vas rápido. */
+      ritmo: pacePerHour(tragos, profile, now),
       totalTragos: rows.reduce((a, r) => a + r.tragos, 0),
       /** Cuándo arrancó la previa del grupo (primer vaso de cualquiera). */
       previaDesde,

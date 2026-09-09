@@ -2,17 +2,21 @@ import { useEffect, useRef, useState } from 'react';
 import { AppState, Share, View } from 'react-native';
 import { Button, Card, Chip, Copy, Disclaimer, Kicker, Page, Stat, Title } from '../components/ui';
 import { colors, styles } from '../components/theme';
+import { LINE_REFERENCE, levelOf } from '../lib/alcohol';
 import { pollGroup, USING_MOCKS } from '../api/client';
-import { fmtAgo, fmtBac, plural } from '../lib/format';
+import { fmtAgo, fmtBac, fmtNum, plural } from '../lib/format';
 import { useActions, useApp } from '../state/store';
 import { useGroupStats } from '../state/selectors';
 export function Rank() {
   const { group } = useApp();
   const { setGroup, go, showToast } = useActions();
-  const { rows, totalTragos, now } = useGroupStats();
+  const { rows, totalTragos, promedio, ritmo, now } = useGroupStats();
   const [mode, setMode] = useState<'ahora' | 'tragos'>('ahora');
   const [error, setError] = useState('');
   const [updated, setUpdated] = useState<number | null>(null);
+  // Las barras leen el valor de cada uno contra una escala común. No ordenan ni
+  // puntúan: la lista sigue alfabética.
+  const escala = mode === 'tragos' ? Math.max(4, ...rows.map((r) => r.tragos)) : LINE_REFERENCE;
   const current = useRef(group);
   current.current = group;
   useEffect(() => {
@@ -87,6 +91,11 @@ export function Rank() {
           Registros
         </Chip>
       </View>
+      <Copy style={[styles.small, { marginBottom: 12 }]}>
+        {mode === 'tragos'
+          ? `Cada barra va de 0 a ${escala} registros.`
+          : `Cada barra va de 0 a ${fmtNum(LINE_REFERENCE, 1)} %.`}
+      </Copy>
       <View style={styles.stack}>
         {rows.map((row) => (
           <Card key={row.id} style={row.me ? styles.selected : undefined}>
@@ -106,6 +115,23 @@ export function Rank() {
                 {mode === 'tragos' ? row.tragos : `${fmtBac(row.bac)} %`}
               </Title>
             </View>
+            <View
+              style={{
+                height: 6,
+                borderRadius: 6,
+                backgroundColor: colors.line,
+                overflow: 'hidden',
+              }}
+            >
+              <View
+                style={{
+                  height: 6,
+                  borderRadius: 6,
+                  width: `${Math.min(100, ((mode === 'tragos' ? row.tragos : row.bac) / escala) * 100)}%`,
+                  backgroundColor: levelOf(row.bac).color,
+                }}
+              />
+            </View>
             <Copy style={styles.small}>
               {row.lastLabel} · {plural(row.tragos, 'registro')}
             </Copy>
@@ -115,6 +141,14 @@ export function Rank() {
       <View style={[styles.row, { marginTop: 18 }]}>
         <Stat value={rows.length} label="Personas" />
         <Stat value={totalTragos} label="Registros del grupo" />
+      </View>
+      <View style={[styles.row, { marginTop: 10 }]}>
+        <Stat
+          value={`+${fmtBac(ritmo)}`}
+          label="Tu ritmo · % por hora"
+          color={ritmo > 0.3 ? colors.amber : colors.ink}
+        />
+        <Stat value={fmtBac(promedio)} label="Promedio del grupo · %" />
       </View>
       <Card style={{ marginTop: 18 }}>
         <Kicker>La vuelta</Kicker>

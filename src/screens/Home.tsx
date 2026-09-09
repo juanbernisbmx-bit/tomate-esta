@@ -16,8 +16,8 @@ import {
 import { VesselSheet } from '../components/VesselSheet';
 import { colors, styles } from '../components/theme';
 import { FEATURED_PRESETS } from '../lib/catalog';
-import { gramsOf, levelOf } from '../lib/alcohol';
-import { fmtAbv, fmtAgo, fmtBac, fmtClock, fmtMl } from '../lib/format';
+import { gramsOf, hoursToSober, levelOf } from '../lib/alcohol';
+import { fmtAbv, fmtAgo, fmtBac, fmtClock, fmtHours, fmtMl } from '../lib/format';
 import type { Vessel } from '../lib/types';
 import { useActions, useApp } from '../state/store';
 import { requestUberRide } from '../lib/uber';
@@ -27,6 +27,9 @@ export function Home() {
   const { group, vessel, tragos } = useApp();
   const { go, setVessel, addTrago, undoTrago, showToast } = useActions();
   const { bac, subiendo, total, now, previaDesde } = useGroupStats();
+  // Cuándo volvés a cero contando lo que todavía tenés por absorber: es el dato
+  // con el que se planifica la vuelta.
+  const aCero = hoursToSober(bac + subiendo);
   const [sheet, setSheet] = useState(false);
   const [rideBusy, setRideBusy] = useState(false);
   const level = levelOf(bac);
@@ -68,6 +71,12 @@ export function Home() {
           {subiendo > 0.005 && (
             <Copy style={{ color: colors.night, fontSize: 12 }}>
               ≈ {fmtBac(subiendo)} % pendiente de absorción
+            </Copy>
+          )}
+          {aCero > 0 && (
+            <Copy style={{ color: colors.night, fontSize: 12 }}>
+              Volvés a cero en aproximadamente {fmtHours(aCero)}. No es una autorización para
+              manejar.
             </Copy>
           )}
         </LinearGradient>

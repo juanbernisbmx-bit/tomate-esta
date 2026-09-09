@@ -8,6 +8,8 @@ import {
   bacFromGrams,
   bacOfMember,
   gramsOf,
+  hoursToSober,
+  pacePerHour,
 } from '../src/lib/alcohol';
 import type { Member, Profile, Trago } from '../src/lib/types';
 
@@ -119,4 +121,16 @@ test('un registro con fecha futura no cuenta hasta que llega su hora', () => {
   assert.equal(bacAt([hace(-10)], perfil, now), 0);
   assert.equal(bacBreakdown([hace(-10)], perfil, now).peak, 0);
   assert.equal(bacAt([], perfil, now), 0);
+});
+
+test('el ritmo mira las últimas dos horas y las horas a cero salen de la tasa', () => {
+  assert.equal(pacePerHour([], perfil, now), 0, 'sin registros no hay ritmo');
+  // Un trago viejo queda fuera de la ventana; los recientes sí cuentan.
+  assert.equal(pacePerHour([hace(300)], perfil, now), 0, 'hace 5 h ya no entra');
+  const rapido = pacePerHour([hace(30), hace(15)], perfil, now);
+  const lento = pacePerHour([hace(115), hace(15)], perfil, now);
+  assert.ok(rapido > lento, 'los mismos tragos más juntos son un ritmo más alto');
+
+  cerca(hoursToSober(0.45), 0.45 / ELIMINATION_PER_HOUR, 'horas a cero');
+  assert.equal(hoursToSober(0), 0);
 });

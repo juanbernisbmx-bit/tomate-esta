@@ -3,8 +3,8 @@ import { Share, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Button, Card, Copy, Disclaimer, Kicker, Page, Stat, Title } from '../components/ui';
 import { colors, styles } from '../components/theme';
-import { bacFromGrams } from '../lib/alcohol';
-import { fmtMl, plural } from '../lib/format';
+import { bacAt, bacFromGrams, hoursToSober } from '../lib/alcohol';
+import { fmtBac, fmtHours, fmtMl, plural } from '../lib/format';
 import { useActions, useApp } from '../state/store';
 export function Recap() {
   const { profile, tragos, group } = useApp();
@@ -12,6 +12,8 @@ export function Recap() {
   const [sharing, setSharing] = useState(false);
   const closing = useRef(false);
   const grams = tragos.reduce((sum, t) => sum + t.grams, 0);
+  const bac = bacAt(tragos, profile);
+  const aCero = hoursToSober(bac);
   const ml = tragos.reduce((sum, t) => sum + t.ml, 0);
   const close = () => {
     if (closing.current) return;
@@ -37,6 +39,12 @@ export function Recap() {
       >
         <Title style={{ color: colors.night, fontSize: 32 }}>Volvé con cuidado</Title>
         <Copy style={{ color: colors.night }}>Elegí una vuelta segura y acompañá a tu grupo.</Copy>
+        {aCero > 0 && (
+          <Copy style={{ color: colors.night }}>
+            Tu estimación es de {fmtBac(bac)} % y volvés a cero en aproximadamente {fmtHours(aCero)}
+            . Dejá el auto.
+          </Copy>
+        )}
       </LinearGradient>
       <View style={styles.row}>
         <Stat value={tragos.length} label="Registros" />
