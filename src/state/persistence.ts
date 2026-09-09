@@ -1,5 +1,5 @@
 import { initialState, type AppState } from './model';
-import { DRINK_TYPES } from '../lib/catalog';
+import { DRINK_TYPES, ML_RANGE } from '../lib/catalog';
 const isObject = (v: unknown): v is Record<string, unknown> =>
   !!v && typeof v === 'object' && !Array.isArray(v);
 const finite = (v: unknown, min = 0, max = Number.MAX_VALUE): v is number =>
@@ -8,7 +8,11 @@ const text = (v: unknown): v is string => typeof v === 'string';
 const sex = (v: unknown) => v === 'H' || v === 'M' || v === 'X';
 const kind = (v: unknown) => DRINK_TYPES.some((d) => d.id === v);
 const dose = (v: Record<string, unknown>) =>
-  finite(v.ml, 1, 10000) && finite(v.abv, 0, 100) && kind(v.kind) && text(v.id) && text(v.label);
+  finite(v.ml, ML_RANGE[0], ML_RANGE[1]) &&
+  finite(v.abv, 0, 100) &&
+  kind(v.kind) &&
+  text(v.id) &&
+  text(v.label);
 
 /** Whitelist persisted fields: navigation/toasts never survive a cold launch. */
 export function decodeSavedState(raw: string | null): AppState {

@@ -63,13 +63,17 @@ export default function App() {
           onScan={() => actions.go('scan')}
           onAdd={() => {
             const t = actions.addTrago();
-            actions.showToast(`Registraste ${t.label}`, t.id, 'Si tomaste, no manejes.');
+            actions.showToast(`Registraste ${t.label}`, {
+              undoId: t.id,
+              hint: 'Si tomaste, no manejes.',
+            });
           }}
         />
       )}
       <Toast
         toast={state.toast}
         onUndo={actions.undoTrago}
+        onRestore={actions.restoreTrago}
         onClose={actions.hideToast}
         offset={WITH_TABS.includes(screen) ? 110 : 35}
       />

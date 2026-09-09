@@ -393,6 +393,49 @@ export function GlassIcon({ kind, size = 44 }: { kind: string; size?: number }) 
     </Svg>
   );
 }
+/**
+ * Íconos de la barra inferior. Estaban puestos como caracteres Unicode (◷, ≋, ○)
+ * sobre Space Grotesk, que no trae ninguno de los tres: el sistema los resolvía
+ * con otra fuente, con métricas y peso propios.
+ */
+export type TabIconName = 'registro' | 'mas' | 'grupo' | 'perfil';
+
+export function TabIcon({
+  name,
+  size = 24,
+  color = colors.muted,
+}: {
+  name: TabIconName;
+  size?: number;
+  color?: string;
+}) {
+  const line = { stroke: color, strokeWidth: 1.9, strokeLinecap: 'round' as const };
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      {name === 'registro' && (
+        <>
+          <Circle cx={12} cy={12} r={8.4} {...line} />
+          <Path d="M12 7.2V12l3.4 2.1" {...line} strokeLinejoin="round" />
+        </>
+      )}
+      {name === 'mas' && <Path d="M12 5.5v13M5.5 12h13" {...line} strokeWidth={2.2} />}
+      {name === 'grupo' && (
+        <>
+          <Circle cx={9} cy={8.6} r={3.3} {...line} />
+          <Path d="M3.2 19c0-3.2 2.6-5.2 5.8-5.2s5.8 2 5.8 5.2" {...line} />
+          <Path d="M16.2 6.2a3.3 3.3 0 0 1 0 6.1M17.4 14.2c2.1.5 3.4 2.3 3.4 4.8" {...line} />
+        </>
+      )}
+      {name === 'perfil' && (
+        <>
+          <Circle cx={12} cy={8.4} r={3.6} {...line} />
+          <Path d="M5.4 19.2c0-3.5 3-5.6 6.6-5.6s6.6 2.1 6.6 5.6" {...line} />
+        </>
+      )}
+    </Svg>
+  );
+}
+
 export function CameraIcon({ size = 24, color = colors.night }: { size?: number; color?: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">

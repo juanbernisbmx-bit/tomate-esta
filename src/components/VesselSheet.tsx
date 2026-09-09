@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
-import { DRINK_TYPES, PRESETS, clampAbv, drinkType } from '../lib/catalog';
+import { DRINK_TYPES, ML_RANGE, PRESETS, clampAbv, drinkType } from '../lib/catalog';
 import { gramsOf } from '../lib/alcohol';
 import { fmtAbv, fmtMl, uid } from '../lib/format';
 import type { DrinkKind, Vessel } from '../lib/types';
@@ -96,8 +96,8 @@ export function VesselSheet({
           </View>
           <NumberPicker
             label="Volumen en ml"
-            min={15}
-            max={1500}
+            min={ML_RANGE[0]}
+            max={ML_RANGE[1]}
             step={5}
             value={ml}
             onChange={setMl}

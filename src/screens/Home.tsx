@@ -25,7 +25,7 @@ import { useGroupStats } from '../state/selectors';
 import { USING_MOCKS } from '../api/client';
 export function Home() {
   const { group, vessel, tragos } = useApp();
-  const { go, setVessel, addTrago, undoTrago, showToast } = useActions();
+  const { go, setVessel, addTrago, undoTrago, restoreTrago, showToast } = useActions();
   const { bac, subiendo, total, now, previaDesde } = useGroupStats();
   // Cuándo volvés a cero contando lo que todavía tenés por absorber: es el dato
   // con el que se planifica la vuelta.
@@ -35,7 +35,7 @@ export function Home() {
   const level = levelOf(bac);
   const register = (v: Vessel = vessel, via: 'boton' | 'preset' = 'boton') => {
     const t = addTrago(v, via);
-    showToast(`Registraste ${v.label}`, t.id, 'Si tomaste, no manejes.');
+    showToast(`Registraste ${v.label}`, { undoId: t.id, hint: 'Si tomaste, no manejes.' });
   };
   return (
     <Page>
@@ -46,7 +46,10 @@ export function Home() {
         <Copy style={styles.small}>{fmtClock(now)}</Copy>
       </View>
       {previaDesde != null && (
-        <Copy style={styles.small}>Inicio del registro · {fmtClock(previaDesde)}</Copy>
+        <Copy style={styles.small}>
+          {tragos.length ? 'Inicio de tu registro' : 'El grupo arrancó'} ·{' '}
+          {fmtClock(tragos.length ? tragos[0].at : previaDesde)}
+        </Copy>
       )}
       {USING_MOCKS && (
         <Copy style={[styles.small, { color: colors.amber, marginTop: 8 }]}>
@@ -163,7 +166,7 @@ export function Home() {
                 accessibilityLabel={`Eliminar ${t.label}`}
                 onPress={() => {
                   undoTrago(t.id);
-                  showToast(`Eliminaste ${t.label}`);
+                  showToast(`Eliminaste ${t.label}`, { restore: t });
                 }}
               >
                 ×

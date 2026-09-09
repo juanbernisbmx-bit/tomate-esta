@@ -1,5 +1,5 @@
 /** Frontend API contract. The backend, identity and authorization are external to this repository. */
-import { PRESETS, drinkType } from '../lib/catalog';
+import { ML_RANGE, PRESETS, drinkType } from '../lib/catalog';
 import { initials, uid } from '../lib/format';
 import type { DrinkKind, Group, Member, ScanResult, Trago } from '../lib/types';
 export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? '').replace(/\/$/, '');
@@ -32,8 +32,8 @@ export async function analyzeGlass(photo: string | null, kind: DrinkKind): Promi
     if (
       !result ||
       !Number.isFinite(result.ml) ||
-      result.ml < 15 ||
-      result.ml > 1500 ||
+      result.ml < ML_RANGE[0] ||
+      result.ml > ML_RANGE[1] ||
       !Number.isFinite(result.abv) ||
       result.abv < 0 ||
       result.abv > 100 ||

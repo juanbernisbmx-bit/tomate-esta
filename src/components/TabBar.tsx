@@ -1,7 +1,15 @@
 import { Pressable, View } from 'react-native';
 import type { Screen } from '../lib/types';
-import { CameraIcon, Copy } from './ui';
+import { CameraIcon, Copy, TabIcon, type TabIconName } from './ui';
 import { colors } from './theme';
+/** `icon: null` es el botón de la cámara, que va destacado en el centro. */
+interface Tab {
+  label: string;
+  icon: TabIconName | null;
+  target?: Screen;
+  press: () => void;
+}
+
 export function TabBar({
   screen,
   onGo,
@@ -13,12 +21,12 @@ export function TabBar({
   onAdd: () => void;
   onScan: () => void;
 }) {
-  const tabs = [
-    { label: 'Registro', icon: '◷', target: 'home' as Screen, press: () => onGo('home') },
-    { label: '+ Trago', icon: '+', press: onAdd },
-    { label: 'Escanear', icon: '', press: onScan },
-    { label: 'Grupo', icon: '≋', target: 'rank' as Screen, press: () => onGo('rank') },
-    { label: 'Perfil', icon: '○', target: 'profile' as Screen, press: () => onGo('profile') },
+  const tabs: Tab[] = [
+    { label: 'Registro', icon: 'registro', target: 'home' as Screen, press: () => onGo('home') },
+    { label: '+ Trago', icon: 'mas', press: onAdd },
+    { label: 'Escanear', icon: null, press: onScan },
+    { label: 'Grupo', icon: 'grupo', target: 'rank' as Screen, press: () => onGo('rank') },
+    { label: 'Perfil', icon: 'perfil', target: 'profile' as Screen, press: () => onGo('profile') },
   ];
   return (
     <View
@@ -48,20 +56,16 @@ export function TabBar({
             opacity: pressed ? 0.5 : 1,
           })}
         >
-          {i === 2 ? (
+          {t.icon === null ? (
             <View style={{ backgroundColor: colors.amber, padding: 12, borderRadius: 30 }}>
               <CameraIcon />
             </View>
           ) : (
-            <Copy
-              style={{
-                fontSize: 25,
-                lineHeight: 28,
-                color: t.target === screen ? colors.lime : colors.muted,
-              }}
-            >
-              {t.icon}
-            </Copy>
+            <TabIcon
+              name={t.icon}
+              size={25}
+              color={t.target === screen ? colors.lime : colors.muted}
+            />
           )}
           <Copy
             style={{

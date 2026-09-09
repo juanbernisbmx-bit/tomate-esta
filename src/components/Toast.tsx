@@ -2,14 +2,17 @@ import { useEffect } from 'react';
 import { View } from 'react-native';
 import { Button, Copy } from './ui';
 import { colors, styles } from './theme';
+import type { Trago } from '../lib/types';
 export function Toast({
   toast,
   onUndo,
+  onRestore,
   onClose,
   offset = 80,
 }: {
-  toast: { id: string; text: string; undoId?: string; hint?: string } | null;
+  toast: { id: string; text: string; undoId?: string; hint?: string; restore?: Trago } | null;
   onUndo: (id: string) => void;
+  onRestore: (trago: Trago) => void;
   onClose: () => void;
   offset?: number;
 }) {
@@ -41,12 +44,13 @@ export function Toast({
         <Copy style={{ fontSize: 12 }}>{toast.text}</Copy>
         {toast.hint && <Copy style={{ fontSize: 11, color: colors.amber }}>{toast.hint}</Copy>}
       </View>
-      {toast.undoId ? (
+      {toast.undoId || toast.restore ? (
         <Button
           compact
           variant="dark"
           onPress={() => {
-            onUndo(toast.undoId!);
+            if (toast.restore) onRestore(toast.restore);
+            else if (toast.undoId) onUndo(toast.undoId);
             onClose();
           }}
         >

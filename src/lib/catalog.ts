@@ -62,6 +62,13 @@ export const DRINK_TYPES: DrinkType[] = [
   },
 ];
 
+/**
+ * Volumen aceptado para un vaso, en ml. Lo comparten el slider, la validación de
+ * lo que devuelve el análisis y el filtro de lo que se recupera del storage: se
+ * habían desincronizado y el storage aceptaba hasta 10 000 ml.
+ */
+export const ML_RANGE: readonly [number, number] = [15, 1500];
+
 export function drinkType(kind: DrinkKind): DrinkType {
   return DRINK_TYPES.find((d) => d.id === kind) ?? DRINK_TYPES[0];
 }

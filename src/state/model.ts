@@ -20,7 +20,7 @@ export interface AppState {
   vessel: Vessel;
   tragos: Trago[];
   history: NightSummary[];
-  toast: { id: string; text: string; undoId?: string; hint?: string } | null;
+  toast: { id: string; text: string; undoId?: string; hint?: string; restore?: Trago } | null;
 }
 
 export const initialState: AppState = {
@@ -42,8 +42,9 @@ export type Action =
   | { type: 'vessel'; vessel: Vessel }
   | { type: 'addTrago'; trago: Trago }
   | { type: 'undoTrago'; id: string }
+  | { type: 'restoreTrago'; trago: Trago }
   | { type: 'closeNight'; summary: NightSummary }
-  | { type: 'toast'; text: string | null; undoId?: string; hint?: string }
+  | { type: 'toast'; text: string | null; undoId?: string; hint?: string; restore?: Trago }
   | { type: 'hydrate'; state: Partial<AppState> }
   | { type: 'reset' };
 
@@ -63,13 +64,26 @@ export function reducer(state: AppState, action: Action): AppState {
       return { ...state, tragos: [...state.tragos, action.trago] };
     case 'undoTrago':
       return { ...state, tragos: state.tragos.filter((t) => t.id !== action.id) };
+    case 'restoreTrago':
+      // Vuelve a su lugar por hora, no al final: la lista se muestra y se
+      // recorre asumiendo que está ordenada.
+      return {
+        ...state,
+        tragos: [...state.tragos, action.trago].sort((a, b) => a.at - b.at),
+      };
     case 'closeNight':
       return { ...state, tragos: [], history: [action.summary, ...state.history].slice(0, 30) };
     case 'toast':
       return {
         ...state,
         toast: action.text
-          ? { id: uid('t'), text: action.text, undoId: action.undoId, hint: action.hint }
+          ? {
+              id: uid('t'),
+              text: action.text,
+              undoId: action.undoId,
+              hint: action.hint,
+              restore: action.restore,
+            }
           : null,
       };
     case 'hydrate':

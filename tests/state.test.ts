@@ -3,7 +3,7 @@ import test from 'node:test';
 import { initialState, reducer } from '../src/state/model';
 import { createWriteQueue, decodeSavedState, serializeState } from '../src/state/persistence';
 import { gramsOf, bacAt, bacBreakdown } from '../src/lib/alcohol';
-import { DEFAULT_VESSEL } from '../src/lib/catalog';
+import { DEFAULT_VESSEL, ML_RANGE } from '../src/lib/catalog';
 import { plural, pluralWord } from '../src/lib/format';
 import type { Trago } from '../src/lib/types';
 const at = 1_700_000_000_000;
@@ -126,4 +126,57 @@ test('las etiquetas de los contadores concuerdan con su número', () => {
   // plural() sigue apoyándose en el mismo criterio.
   assert.equal(plural(1, 'registro'), '1 registro');
   assert.equal(plural(2, 'registro'), '2 registros');
+});
+
+test('restaurar un registro borrado lo devuelve a su lugar en la noche', () => {
+  const temprano: Trago = { ...trago, id: 'a', at: at - 3 * 3600000 };
+  const medio: Trago = { ...trago, id: 'b', at: at - 3600000 };
+  const tarde: Trago = { ...trago, id: 'c', at };
+  let state = reducer(initialState, { type: 'addTrago', trago: temprano });
+  state = reducer(state, { type: 'addTrago', trago: medio });
+  state = reducer(state, { type: 'addTrago', trago: tarde });
+
+  state = reducer(state, { type: 'undoTrago', id: 'b' });
+  assert.deepEqual(
+    state.tragos.map((t) => t.id),
+    ['a', 'c'],
+  );
+
+  // Vuelve al medio, no al final: el resto del código lee la lista en orden.
+  state = reducer(state, { type: 'restoreTrago', trago: medio });
+  assert.deepEqual(
+    state.tragos.map((t) => t.id),
+    ['a', 'b', 'c'],
+  );
+  assert.deepEqual(
+    state.tragos.map((t) => t.at),
+    [...state.tragos].sort((x, y) => x.at - y.at).map((t) => t.at),
+  );
+});
+
+test('el aviso de borrado lleva el registro para poder deshacerlo', () => {
+  const state = reducer(initialState, {
+    type: 'toast',
+    text: 'Eliminaste Cerveza',
+    restore: trago,
+  });
+  assert.equal(state.toast?.restore?.id, trago.id);
+  assert.equal(state.toast?.undoId, undefined);
+  // Y el aviso no sobrevive a un reinicio, como el resto de la navegación.
+  assert.equal(decodeSavedState(serializeState(state)).toast, null);
+});
+
+test('el volumen aceptado es el mismo en el storage que en la interfaz', () => {
+  const vaso = (ml: number) => ({
+    ...initialState,
+    vessel: { ...DEFAULT_VESSEL, id: 'v1', label: 'Vaso', ml },
+  });
+  // Dentro del rango se conserva; fuera se descarta y queda el vaso por defecto.
+  assert.equal(decodeSavedState(serializeState(vaso(ML_RANGE[1]))).vessel.ml, ML_RANGE[1]);
+  assert.equal(decodeSavedState(serializeState(vaso(ML_RANGE[0]))).vessel.ml, ML_RANGE[0]);
+  assert.equal(
+    decodeSavedState(serializeState(vaso(ML_RANGE[1] + 1))).vessel.ml,
+    DEFAULT_VESSEL.ml,
+    'un vaso más grande que el máximo del slider no debería sobrevivir',
+  );
 });

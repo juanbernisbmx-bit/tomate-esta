@@ -16,7 +16,7 @@ import {
 } from '../components/ui';
 import { colors, styles } from '../components/theme';
 import { analyzeGlass, USING_MOCKS } from '../api/client';
-import { DRINK_TYPES, clampAbv, drinkType } from '../lib/catalog';
+import { DRINK_TYPES, ML_RANGE, clampAbv, drinkType } from '../lib/catalog';
 import { gramsOf } from '../lib/alcohol';
 import { fmtMl, uid } from '../lib/format';
 import type { DrinkKind, ScanResult, Vessel } from '../lib/types';
@@ -122,7 +122,7 @@ export function Scan() {
     setVessel(v);
     if (add) {
       const t = addTrago(v, manual ? 'preset' : 'scan');
-      showToast(`Registraste ${v.label}`, t.id, 'Si tomaste, no manejes.');
+      showToast(`Registraste ${v.label}`, { undoId: t.id, hint: 'Si tomaste, no manejes.' });
     } else showToast(`Tu vaso ahora es ${v.label}`);
     go('home');
   };
@@ -306,8 +306,8 @@ export function Scan() {
           </Card>
           <NumberPicker
             label="Volumen en ml"
-            min={15}
-            max={1500}
+            min={ML_RANGE[0]}
+            max={ML_RANGE[1]}
             step={5}
             value={ml}
             onChange={setMl}

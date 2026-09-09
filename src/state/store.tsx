@@ -36,8 +36,10 @@ export interface AppActions {
   /** Suma un trago. Sin argumento usa el vaso predeterminado. */
   addTrago: (vessel?: Vessel, via?: Trago['via']) => Trago;
   undoTrago: (id: string) => void;
+  /** Vuelve a poner un registro borrado, para el "Deshacer" del aviso. */
+  restoreTrago: (trago: Trago) => void;
   closeNight: (summary: Omit<NightSummary, 'id' | 'closedAt'>) => void;
-  showToast: (text: string, undoId?: string, hint?: string) => void;
+  showToast: (text: string, opts?: { undoId?: string; hint?: string; restore?: Trago }) => void;
   hideToast: () => void;
   reset: () => void;
 }
@@ -115,12 +117,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return trago;
       },
       undoTrago: (id) => dispatch({ type: 'undoTrago', id }),
+      restoreTrago: (trago) => dispatch({ type: 'restoreTrago', trago }),
       closeNight: (summary) =>
         dispatch({
           type: 'closeNight',
           summary: { ...summary, id: uid('n'), closedAt: Date.now() },
         }),
-      showToast: (text, undoId, hint) => dispatch({ type: 'toast', text, undoId, hint }),
+      showToast: (text, opts) => dispatch({ type: 'toast', text, ...opts }),
       hideToast: () => dispatch({ type: 'toast', text: null }),
       reset: () => dispatch({ type: 'reset' }),
     }),
