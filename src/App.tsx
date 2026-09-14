@@ -10,6 +10,7 @@ import { Home } from './screens/Home';
 import { Scan } from './screens/Scan';
 import { Rank } from './screens/Rank';
 import { Profile } from './screens/Profile';
+import { Login } from './screens/Login';
 import { Recap } from './screens/Recap';
 import type { Screen } from './lib/types';
 import { useActions, useApp } from './state/store';
@@ -54,6 +55,7 @@ export default function App() {
         {screen === 'scan' && <Scan />}
         {screen === 'rank' && <Rank />}
         {screen === 'profile' && <Profile />}
+        {screen === 'login' && <Login />}
         {screen === 'recap' && <Recap />}
       </View>
       {WITH_TABS.includes(screen) && (

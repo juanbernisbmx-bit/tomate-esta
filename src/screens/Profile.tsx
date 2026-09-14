@@ -128,6 +128,9 @@ export function Profile() {
         </View>
       )}
       <View style={styles.section}>
+        <Button variant="dark" onPress={() => go('login')}>
+          Log in
+        </Button>
         <Button variant="dark" onPress={() => go('recap')}>
           Ver resumen y cerrar noche
         </Button>

@@ -22,6 +22,55 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
     clearTimeout(timeout);
   }
 }
+/**
+ * Login/registro: SOLO frontend por ahora. Con EXPO_PUBLIC_API_URL vacío nunca
+ * pega a ningún backend real; simula una demora y devuelve éxito para poder
+ * probar la pantalla. Cuando haya backend, alcanza con setear esa variable —
+ * el contrato (`/api/auth/login`, `/api/auth/register`) ya está acá.
+ */
+export async function login(email: string, password: string): Promise<void> {
+  if (API_URL) {
+    await apiFetch<void>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    return;
+  }
+  await new Promise((resolve) => setTimeout(resolve, 700));
+}
+
+export async function register(email: string, password: string): Promise<void> {
+  if (API_URL) {
+    await apiFetch<void>('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    return;
+  }
+  await new Promise((resolve) => setTimeout(resolve, 700));
+}
+
+/**
+ * Avisa DENTRO de la app a los demás integrantes del grupo que alguien pidió
+ * rescate. Igual que login/register: sin EXPO_PUBLIC_API_URL no llega a
+ * nadie, solo simula la llamada. Para que esto notifique de verdad a otros
+ * dispositivos hace falta backend + push notifications (Expo push tokens) —
+ * no es algo que el frontend solo pueda resolver, por eso queda mockeado.
+ */
+export async function notifyRescue(
+  groupCode: string,
+  coords?: { latitude: number; longitude: number },
+): Promise<void> {
+  if (API_URL) {
+    await apiFetch<void>(`/api/groups/${encodeURIComponent(groupCode)}/rescue`, {
+      method: 'POST',
+      body: JSON.stringify({ latitude: coords?.latitude, longitude: coords?.longitude }),
+    });
+    return;
+  }
+  await new Promise((resolve) => setTimeout(resolve, 400));
+}
+
 export async function analyzeGlass(photo: string | null, kind: DrinkKind): Promise<ScanResult> {
   if (API_URL) {
     if (!photo) throw new Error('Sacá una foto o cargá las medidas manualmente.');

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 import { useCameraPermissions } from 'expo-camera';
+import * as Location from 'expo-location';
 import {
   Button,
   Card,
@@ -38,7 +39,7 @@ export function Onboarding({
     'El peso se usa en la estimación. Podés ajustarlo desde tu perfil.',
     'Este dato aproxima el agua corporal. No se muestra a otros integrantes.',
     'Tomate es para mayores de 18 años.',
-    'Elegís la bebida y sacás una foto. Podés corregir el volumen y la graduación antes de registrar.',
+    'Elegís la bebida y sacás una foto. También pedimos tu ubicación una sola vez, para "Pedir un Uber" y "Solicitar rescate" más adelante.',
   ];
   const next = async () => {
     if (step < 3) {
@@ -47,9 +48,10 @@ export function Onboarding({
     }
     setBusy(true);
     try {
-      await requestPermission();
-    } catch {
-      /* Manual entry remains available. */
+      // Se piden juntas, una sola vez, acá al final del onboarding: así "Pedir
+      // un Uber" y "Solicitar rescate" ya tienen el permiso de ubicación
+      // concedido de entrada y no lo vuelven a preguntar más adelante.
+      await Promise.allSettled([requestPermission(), Location.requestForegroundPermissionsAsync()]);
     } finally {
       setBusy(false);
       onDone();
@@ -127,14 +129,16 @@ export function Onboarding({
           <Copy>2. Fotografías el recipiente completo.</Copy>
           <Copy>3. Revisás las medidas y guardás tu vaso predeterminado.</Copy>
           <Copy style={styles.small}>
-            El permiso es opcional. También podés cargar medidas a mano.
+            También vamos a pedirte la ubicación, para "Pedir un Uber" y "Solicitar rescate" sin
+            preguntar de nuevo cada vez. Ambos permisos son opcionales: podés cargar medidas a
+            mano y seguir usando la app sin ubicación.
           </Copy>
         </Card>
       )}
       <View style={{ flex: 1 }} />
       <Disclaimer />
       <Button disabled={busy || (step === 2 && !adult)} onPress={() => void next()}>
-        {busy ? 'Abriendo permisos…' : step === 3 ? 'Permitir cámara' : 'Seguir'}
+        {busy ? 'Abriendo permisos…' : step === 3 ? 'Permitir cámara y ubicación' : 'Seguir'}
       </Button>
       {step === 3 && (
         <Button compact variant="ghost" disabled={busy} onPress={onDone}>

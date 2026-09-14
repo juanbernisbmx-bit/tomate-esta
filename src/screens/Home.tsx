@@ -30,10 +30,11 @@ import {
 import type { Vessel } from '../lib/types';
 import { useActions, useApp } from '../state/store';
 import { requestUberRide } from '../lib/uber';
+import { requestRescue } from '../lib/rescue';
 import { useGroupStats } from '../state/selectors';
 import { USING_MOCKS } from '../api/client';
 export function Home() {
-  const { group, vessel, tragos } = useApp();
+  const { profile, group, vessel, tragos } = useApp();
   const { go, setVessel, addTrago, undoTrago, restoreTrago, showToast } = useActions();
   const { bac, subiendo, total, now, previaDesde } = useGroupStats();
   // Cuándo volvés a cero contando lo que todavía tenés por absorber: es el dato
@@ -41,6 +42,7 @@ export function Home() {
   const aCero = hoursToSober(bac + subiendo);
   const [sheet, setSheet] = useState(false);
   const [rideBusy, setRideBusy] = useState(false);
+  const [rescueBusy, setRescueBusy] = useState(false);
   const level = levelOf(bac);
   const register = (v: Vessel = vessel, via: 'boton' | 'preset' = 'boton') => {
     const t = addTrago(v, via);
@@ -198,6 +200,23 @@ export function Home() {
           }}
         >
           {rideBusy ? 'Abriendo Uber…' : 'Pedir un Uber'}
+        </Button>
+        <Button variant="dark" onPress={() => go('recap')}>
+          Ver resumen y cerrar noche
+        </Button>
+        <Button
+          variant="danger"
+          disabled={rescueBusy}
+          onPress={async () => {
+            setRescueBusy(true);
+            try {
+              await requestRescue({ nombre: profile.nombre, groupCode: group?.code }, showToast);
+            } finally {
+              setRescueBusy(false);
+            }
+          }}
+        >
+          {rescueBusy ? 'Pidiendo ayuda…' : 'Solicitar rescate'}
         </Button>
       </View>
       <Disclaimer />

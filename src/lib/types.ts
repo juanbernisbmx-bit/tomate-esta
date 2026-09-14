@@ -80,7 +80,7 @@ export interface Group {
 }
 
 export type Screen =
-  'welcome' | 'onboarding' | 'group' | 'home' | 'scan' | 'rank' | 'profile' | 'recap';
+  'welcome' | 'onboarding' | 'group' | 'home' | 'scan' | 'rank' | 'profile' | 'recap' | 'login';
 
 /** Resultado que devuelve la IA al analizar la foto del vaso. */
 export interface ScanResult {

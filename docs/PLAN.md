@@ -178,6 +178,7 @@ las funciones que ya existen en `src/api/client.ts` del frontend.
 | `GET` | `/api/groups/{code}` | `fetchGroup` / `pollGroup` (trae grupo + tabla calculada) | sí |
 | `POST` | `/api/groups/{code}/tragos` | `pushTrago` | sí |
 | `DELETE` | `/api/tragos/{id}` | el "deshacer" del toast (hoy solo local) | sí |
+| `POST` | `/api/groups/{code}/rescue` | botón "Solicitar rescate" en `Home.tsx` (`notifyRescue`) | sí |
 | `POST` | `/api/scan` | `analyzeGlass` | sí |
 | `POST` | `/api/nights/close` | cerrar noche en `Profile.tsx`/`Recap.tsx` (hoy solo local) | sí |
 | `GET` | `/api/nights` | historial de `Profile.tsx` | sí |
@@ -321,3 +322,9 @@ MVP.
 - Push notifications ("Fer acaba de pasar 0,8 ‰").
 - Guardar las fotos de los vasos (hoy alcanza con analizarlas y descartarlas).
 - Rate limiting más fino (por IP además de por usuario) en `/api/scan` y `/api/auth/*`.
+- Push notifications reales para `POST /api/groups/{code}/rescue` (botón "Solicitar rescate"):
+  el frontend ya manda lat/lng del que pide ayuda, pero hoy nadie lo recibe porque no hay
+  push configurado. Hace falta registrar el push token de Expo de cada usuario (tabla nueva,
+  ej. `push_tokens`) y que el endpoint dispare una notificación a todos los miembros del grupo
+  (Expo Push API o FCM/APNs directo). Sin esto el botón solo abre WhatsApp con la ubicación,
+  que ya funciona hoy sin backend.
